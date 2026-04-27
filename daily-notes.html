@@ -733,12 +733,18 @@
                 return;
             }
             
-            const markdown = notes.map(note => 
+            const sortedNotes = [...notes].sort((a, b) => {
+                const timeA = a.timestamp || a.id || 0;
+                const timeB = b.timestamp || b.id || 0;
+                return timeA - timeB;
+            });
+            
+            const markdown = sortedNotes.map(note => 
                 `**${dateKey} ${note.time}**\n${note.content}`
             ).join('\n\n');
             
             copyTextToClipboard(markdown).then(() => {
-                showToast(`已复制 ${notes.length} 条记录`);
+                showToast(`已复制 ${sortedNotes.length} 条记录`);
             }).catch(() => {
                 showToast('复制失败');
             });
