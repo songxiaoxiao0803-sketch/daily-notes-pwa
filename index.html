@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#fafaf9">
+    <meta name="application-name" content="日记">
+    <meta name="apple-mobile-web-app-title" content="日记">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png">
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+    <title>日记</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #fafaf9;
+            --bg-card: #ffffff;
+            --text-primary: #1c1917;
+            --text-secondary: #78716c;
+            --text-tertiary: #a8a29e;
+            --border: #e7e5e4;
+            --accent: #292524;
+            --hover: #f5f5f4;
+            --shadow: rgba(0, 0, 0, 0.04);
+        }
+
+        body {
+            font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Microsoft YaHei", sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: calc(24px + env(safe-area-inset-top)) 20px calc(96px + env(safe-area-inset-bottom));
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding: 16px 0;
+        }
+
+        .date-nav {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .date-display {
+            font-size: 18px;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            color: var(--text-primary);
+            min-width: 140px;
+            text-align: center;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .nav-btn:hover {
+            background: var(--hover);
+            color: var(--text-primary);
+        }
+
+        .today-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .today-btn:hover {
+            border-color: var(--text-secondary);
+            color: var(--text-primary);
+        }
+
+        /* Input Area */
+        .input-area {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 2px var(--shadow);
+        }
+
+        .input-field {
+            width: 100%;
+            border: none;
+            outline: none;
+            font-size: 15px;
+            line-height: 1.6;
+            resize: none;
+            min-height: 80px;
+            font-family: inherit;
+            color: var(--text-primary);
+        }
+
+        .input-field::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .input-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .save-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .save-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .save-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Notes List */
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .note-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 16px;
+            position: relative;
+            box-shadow: 0 1px 2px var(--shadow);
+            transition: all 0.2s;
+        }
+
+        .note-card:hover {
+            border-color: var(--text-tertiary);
+        }
+
+        .note-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .note-time {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .note-menu {
+            position: relative;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 18px;
+            line-height: 1;
+            transition: all 0.2s;
+        }
+
+        .menu-btn:hover {
+            background: var(--hover);
+            color: var(--text-secondary);
+        }
+
+        .menu-dropdown {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 4px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            min-width: 100px;
+            display: none;
+        }
+
+        .menu-dropdown.active {
+            display: block;
+        }
+
+        .menu-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .menu-item:hover {
+            background: var(--hover);
+        }
+
+        .menu-item.delete {
+            color: #dc2626;
+        }
+
+        .note-content {
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .note-content.editing {
+            display: none;
+        }
+
+        .edit-field {
+            display: none;
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 15px;
+            line-height: 1.7;
+            resize: none;
+            min-height: 60px;
+            font-family: inherit;
+            margin-bottom: 8px;
+        }
+
+        .edit-field.active {
+            display: block;
+        }
+
+        .edit-actions {
+            display: none;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .edit-actions.active {
+            display: flex;
+        }
+
+        .edit-btn, .cancel-btn {
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            border: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .edit-btn {
+            background: var(--accent);
+            color: white;
+        }
+
+        .cancel-btn {
+            background: var(--hover);
+            color: var(--text-primary);
+        }
+
+        .edit-btn:hover, .cancel-btn:hover {
+            opacity: 0.9;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-tertiary);
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .empty-state p {
+            font-size: 15px;
+        }
+
+        /* Copy Button */
+        .copy-btn {
+            position: fixed;
+            bottom: calc(24px + env(safe-area-inset-bottom));
+            right: 50%;
+            transform: translateX(50%);
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 24px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .copy-btn:hover {
+            transform: translateX(50%) translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .copy-btn:active {
+            transform: translateX(50%) translateY(0);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: calc(24px + env(safe-area-inset-top));
+            right: 50%;
+            transform: translateX(50%) translateY(-100px);
+            background: var(--accent);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(50%) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="date-nav">
+                <button class="nav-btn" id="prevDay">←</button>
+                <div class="date-display" id="dateDisplay"></div>
+                <button class="nav-btn" id="nextDay">→</button>
+            </div>
+            <button class="today-btn" id="todayBtn">今天</button>
+        </div>
+
+        <div class="input-area">
+            <textarea 
+                class="input-field" 
+                id="noteInput" 
+                placeholder="记录此刻的想法..."
+            ></textarea>
+            <div class="input-actions">
+                <button class="save-btn" id="saveBtn">保存</button>
+            </div>
+        </div>
+
+        <div class="notes-list" id="notesList"></div>
+    </div>
+
+    <button class="copy-btn" id="copyBtn">复制今日记录</button>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // 数据存储
+        const STORAGE_KEY = 'daily_notes';
+        
+        // 当前日期
+        let currentDate = new Date();
+        
+        // 获取数据
+        function getData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : {};
+        }
+        
+        // 保存数据
+        function saveData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+        
+        // 格式化日期为 YYYY-MM-DD
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        // 格式化日期显示 (中文)
+        function formatDateDisplay(date) {
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+            const weekday = weekdays[date.getDay()];
+            return `${month}月${day}日 ${weekday}`;
+        }
+        
+        // 格式化时间为 HH:MM
+        function formatTime(date) {
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+        
+        // 更新日期显示
+        function updateDateDisplay() {
+            const dateDisplay = document.getElementById('dateDisplay');
+            const today = new Date();
+            const isToday = formatDate(currentDate) === formatDate(today);
+            
+            if (isToday) {
+                dateDisplay.textContent = '今天';
+            } else {
+                dateDisplay.textContent = formatDateDisplay(currentDate);
+            }
+            
+            renderNotes();
+        }
+        
+        // 显示提示
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+        
+        // 保存笔记
+        function saveNote() {
+            const input = document.getElementById('noteInput');
+            const content = input.value.trim();
+            
+            if (!content) {
+                return;
+            }
+            
+            const data = getData();
+            const dateKey = formatDate(currentDate);
+            
+            if (!data[dateKey]) {
+                data[dateKey] = [];
+            }
+            
+            const note = {
+                id: Date.now(),
+                content: content,
+                time: formatTime(new Date()),
+                timestamp: Date.now()
+            };
+            
+            data[dateKey].unshift(note);
+            saveData(data);
+            
+            input.value = '';
+            renderNotes();
+            showToast('已保存');
+        }
+        
+        // 删除笔记
+        function deleteNote(id) {
+            const data = getData();
+            const dateKey = formatDate(currentDate);
+            
+            if (data[dateKey]) {
+                data[dateKey] = data[dateKey].filter(note => note.id !== id);
+                if (data[dateKey].length === 0) {
+                    delete data[dateKey];
+                }
+                saveData(data);
+                renderNotes();
+                showToast('已删除');
+            }
+        }
+        
+        // 编辑笔记
+        function editNote(id, newContent) {
+            const data = getData();
+            const dateKey = formatDate(currentDate);
+            
+            if (data[dateKey]) {
+                const note = data[dateKey].find(n => n.id === id);
+                if (note) {
+                    note.content = newContent;
+                    saveData(data);
+                    renderNotes();
+                    showToast('已更新');
+                }
+            }
+        }
+        
+        // 渲染笔记列表
+        function renderNotes() {
+            const notesList = document.getElementById('notesList');
+            const data = getData();
+            const dateKey = formatDate(currentDate);
+            const notes = data[dateKey] || [];
+            
+            if (notes.length === 0) {
+                notesList.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        <p>还没有记录</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            notesList.innerHTML = notes.map(note => `
+                <div class="note-card" data-id="${note.id}">
+                    <div class="note-header">
+                        <div class="note-time">${note.time}</div>
+                        <div class="note-menu">
+                            <button class="menu-btn" onclick="toggleMenu(${note.id})">⋯</button>
+                            <div class="menu-dropdown" id="menu-${note.id}">
+                                <div class="menu-item" onclick="startEdit(${note.id})">编辑</div>
+                                <div class="menu-item delete" onclick="confirmDelete(${note.id})">删除</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="note-content" id="content-${note.id}">${escapeHtml(note.content)}</div>
+                    <textarea class="edit-field" id="edit-${note.id}">${escapeHtml(note.content)}</textarea>
+                    <div class="edit-actions" id="actions-${note.id}">
+                        <button class="cancel-btn" onclick="cancelEdit(${note.id})">取消</button>
+                        <button class="edit-btn" onclick="saveEdit(${note.id})">保存</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 转义HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // 切换菜单
+        function toggleMenu(id) {
+            // 关闭所有其他菜单
+            document.querySelectorAll('.menu-dropdown').forEach(menu => {
+                if (menu.id !== `menu-${id}`) {
+                    menu.classList.remove('active');
+                }
+            });
+            
+            const menu = document.getElementById(`menu-${id}`);
+            menu.classList.toggle('active');
+        }
+        
+        // 点击外部关闭菜单
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.note-menu')) {
+                document.querySelectorAll('.menu-dropdown').forEach(menu => {
+                    menu.classList.remove('active');
+                });
+            }
+        });
+        
+        // 开始编辑
+        function startEdit(id) {
+            const content = document.getElementById(`content-${id}`);
+            const editField = document.getElementById(`edit-${id}`);
+            const actions = document.getElementById(`actions-${id}`);
+            const menu = document.getElementById(`menu-${id}`);
+            
+            content.classList.add('editing');
+            editField.classList.add('active');
+            actions.classList.add('active');
+            menu.classList.remove('active');
+            
+            editField.focus();
+            editField.setSelectionRange(editField.value.length, editField.value.length);
+        }
+        
+        // 取消编辑
+        function cancelEdit(id) {
+            const content = document.getElementById(`content-${id}`);
+            const editField = document.getElementById(`edit-${id}`);
+            const actions = document.getElementById(`actions-${id}`);
+            
+            content.classList.remove('editing');
+            editField.classList.remove('active');
+            actions.classList.remove('active');
+            
+            // 恢复原内容
+            const data = getData();
+            const dateKey = formatDate(currentDate);
+            const note = data[dateKey]?.find(n => n.id === id);
+            if (note) {
+                editField.value = note.content;
+            }
+        }
+        
+        // 保存编辑
+        function saveEdit(id) {
+            const editField = document.getElementById(`edit-${id}`);
+            const newContent = editField.value.trim();
+            
+            if (!newContent) {
+                return;
+            }
+            
+            editNote(id, newContent);
+        }
+        
+        // 确认删除
+        function confirmDelete(id) {
+            if (confirm('确定要删除这条记录吗?')) {
+                deleteNote(id);
+            }
+        }
+
+        function fallbackCopyText(text) {
+            const textarea = document.createElement('textarea');
+            const selection = document.getSelection();
+            const selectedRange = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+
+            textarea.value = text;
+            textarea.setAttribute('readonly', '');
+            textarea.style.position = 'fixed';
+            textarea.style.top = '0';
+            textarea.style.left = '0';
+            textarea.style.width = '1px';
+            textarea.style.height = '1px';
+            textarea.style.padding = '0';
+            textarea.style.border = '0';
+            textarea.style.opacity = '0';
+
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            textarea.setSelectionRange(0, textarea.value.length);
+
+            let didCopy = false;
+            try {
+                didCopy = document.execCommand('copy');
+            } catch (error) {
+                didCopy = false;
+            }
+
+            document.body.removeChild(textarea);
+
+            if (selection && selectedRange) {
+                selection.removeAllRanges();
+                selection.addRange(selectedRange);
+            }
+
+            return didCopy;
+        }
+
+        function copyTextToClipboard(text) {
+            if (fallbackCopyText(text)) {
+                return Promise.resolve();
+            }
+
+            if (navigator.clipboard && window.isSecureContext) {
+                return navigator.clipboard.writeText(text);
+            }
+
+            return Promise.reject(new Error('Clipboard is unavailable'));
+        }
+        
+        // 复制今日记录
+        function copyTodayNotes() {
+            const data = getData();
+            const dateKey = formatDate(currentDate);
+            const notes = data[dateKey] || [];
+            
+            if (notes.length === 0) {
+                showToast('今天还没有记录');
+                return;
+            }
+            
+            const markdown = notes.map(note => 
+                `**${dateKey} ${note.time}**\n${note.content}`
+            ).join('\n\n');
+            
+            copyTextToClipboard(markdown).then(() => {
+                showToast(`已复制 ${notes.length} 条记录`);
+            }).catch(() => {
+                showToast('复制失败');
+            });
+        }
+        
+        // 事件监听
+        document.getElementById('saveBtn').addEventListener('click', saveNote);
+        document.getElementById('noteInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                saveNote();
+            }
+        });
+        
+        document.getElementById('prevDay').addEventListener('click', () => {
+            currentDate.setDate(currentDate.getDate() - 1);
+            updateDateDisplay();
+        });
+        
+        document.getElementById('nextDay').addEventListener('click', () => {
+            currentDate.setDate(currentDate.getDate() + 1);
+            updateDateDisplay();
+        });
+        
+        document.getElementById('todayBtn').addEventListener('click', () => {
+            currentDate = new Date();
+            updateDateDisplay();
+        });
+        
+        document.getElementById('copyBtn').addEventListener('click', copyTodayNotes);
+        
+        // 初始化
+        updateDateDisplay();
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(() => {
+                    // PWA support is optional when opened from file:// or unsupported contexts.
+                });
+            });
+        }
+    </script>
+</body>
+</html>
