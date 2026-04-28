@@ -24,13 +24,16 @@
         :root {
             --bg-primary: #fafaf9;
             --bg-card: #ffffff;
+            --bg-selected: #fffbeb;
             --text-primary: #1c1917;
             --text-secondary: #78716c;
             --text-tertiary: #a8a29e;
             --border: #e7e5e4;
+            --border-selected: #d6d3d1;
             --accent: #292524;
             --hover: #f5f5f4;
             --shadow: rgba(0, 0, 0, 0.04);
+            --shadow-raised: rgba(0, 0, 0, 0.12);
         }
 
         body {
@@ -54,6 +57,12 @@
             justify-content: space-between;
             margin-bottom: 32px;
             padding: 16px 0;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .date-nav {
@@ -99,9 +108,50 @@
             transition: all 0.2s;
         }
 
-        .today-btn:hover {
+        .today-btn:hover, .select-btn:hover {
             border-color: var(--text-secondary);
             color: var(--text-primary);
+        }
+
+        .select-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: border-color 0.2s, color 0.2s, background-color 0.2s, transform 0.2s;
+        }
+
+        .select-btn:active {
+            transform: scale(0.96);
+        }
+
+        .select-btn.is-cancel {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .selection-status {
+            display: none;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        body.selection-mode .selection-status {
+            display: block;
+        }
+
+        body.selection-mode .today-btn {
+            display: none;
+        }
+
+        body.selection-mode .nav-btn {
+            opacity: 0.45;
         }
 
         /* Input Area */
@@ -132,10 +182,37 @@
 
         .input-actions {
             display: flex;
-            justify-content: flex-end;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
             margin-top: 12px;
             padding-top: 12px;
             border-top: 1px solid var(--border);
+        }
+
+        .backup-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .secondary-action-btn {
+            background: var(--hover);
+            color: var(--text-secondary);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s, transform 0.2s;
+        }
+
+        .secondary-action-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .secondary-action-btn:active {
+            transform: scale(0.96);
         }
 
         .save-btn {
@@ -175,11 +252,70 @@
             padding: 16px;
             position: relative;
             box-shadow: 0 1px 2px var(--shadow);
-            transition: all 0.2s;
+            transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, padding-left 0.2s;
+            touch-action: manipulation;
         }
 
         .note-card:hover {
             border-color: var(--text-tertiary);
+        }
+
+        body.selection-mode .note-card {
+            cursor: pointer;
+            padding-left: 52px;
+            user-select: none;
+        }
+
+        .note-card.selected {
+            background: var(--bg-selected);
+            border-color: var(--border-selected);
+            box-shadow: 0 2px 8px rgba(41, 37, 36, 0.08);
+        }
+
+        .select-control {
+            position: absolute;
+            left: 8px;
+            top: 8px;
+            bottom: 8px;
+            width: 36px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 8px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-4px);
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        body.selection-mode .select-control {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(0);
+        }
+
+        .select-dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1.5px solid var(--border-selected);
+            background: var(--bg-card);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            line-height: 1;
+            transition: background-color 0.16s, border-color 0.16s, transform 0.16s;
+        }
+
+        .note-card.selected .select-dot {
+            background: var(--accent);
+            border-color: var(--accent);
+            transform: scale(1.04);
         }
 
         .note-header {
@@ -197,6 +333,10 @@
 
         .note-menu {
             position: relative;
+        }
+
+        body.selection-mode .note-menu {
+            display: none;
         }
 
         .menu-btn {
@@ -355,6 +495,10 @@
             z-index: 100;
         }
 
+        body.selection-mode .copy-btn {
+            display: none;
+        }
+
         .copy-btn:hover {
             transform: translateX(50%) translateY(-2px);
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
@@ -362,6 +506,73 @@
 
         .copy-btn:active {
             transform: translateX(50%) translateY(0);
+        }
+
+        .selection-bar {
+            position: fixed;
+            left: 50%;
+            bottom: calc(18px + env(safe-area-inset-bottom));
+            transform: translateX(-50%) translateY(24px);
+            width: min(640px, calc(100vw - 32px));
+            display: grid;
+            grid-template-columns: auto 1fr 1fr 1fr;
+            gap: 8px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 18px;
+            padding: 8px;
+            box-shadow: 0 12px 32px var(--shadow-raised);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 110;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        body.selection-mode .selection-bar {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .selection-tool-btn {
+            min-height: 42px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.2s, background-color 0.2s;
+        }
+
+        .selection-tool-btn:active {
+            transform: scale(0.96);
+        }
+
+        .selection-tool-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .select-all-btn {
+            min-width: 72px;
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .selected-copy-btn {
+            background: var(--hover);
+            color: var(--text-primary);
+        }
+
+        .delete-selected-btn {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .merge-btn {
+            background: var(--accent);
+            color: white;
         }
 
         /* Toast */
@@ -381,9 +592,67 @@
             z-index: 1000;
         }
 
+        .toast button {
+            appearance: none;
+            margin-left: 12px;
+            padding: 0;
+            border: none;
+            background: transparent;
+            color: white;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
         .toast.show {
             transform: translateX(50%) translateY(0);
             opacity: 1;
+        }
+
+        @media (max-width: 520px) {
+            .container {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .header {
+                gap: 12px;
+            }
+
+            .date-nav {
+                gap: 8px;
+            }
+
+            .date-display {
+                min-width: 104px;
+                font-size: 16px;
+            }
+
+            .selection-bar {
+                width: calc(100vw - 24px);
+                grid-template-columns: auto 1fr 1fr 1fr;
+            }
+
+            .input-actions {
+                align-items: stretch;
+            }
+
+            .backup-actions {
+                flex: 1;
+            }
+
+            .secondary-action-btn {
+                flex: 1;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                transition-duration: 0.01ms !important;
+                animation-duration: 0.01ms !important;
+            }
         }
     </style>
 </head>
@@ -395,7 +664,11 @@
                 <div class="date-display" id="dateDisplay"></div>
                 <button class="nav-btn" id="nextDay">→</button>
             </div>
-            <button class="today-btn" id="todayBtn">今天</button>
+            <div class="header-actions">
+                <div class="selection-status" id="selectionStatus">已选 0 条</div>
+                <button class="today-btn" id="todayBtn">今天</button>
+                <button class="select-btn" id="selectBtn">选择</button>
+            </div>
         </div>
 
         <div class="input-area">
@@ -405,6 +678,11 @@
                 placeholder="记录此刻的想法..."
             ></textarea>
             <div class="input-actions">
+                <div class="backup-actions">
+                    <button class="secondary-action-btn" id="exportBtn">导出</button>
+                    <button class="secondary-action-btn" id="importBtn">导入</button>
+                    <input type="file" id="importFile" accept="application/json,.json" hidden>
+                </div>
                 <button class="save-btn" id="saveBtn">保存</button>
             </div>
         </div>
@@ -414,6 +692,13 @@
 
     <button class="copy-btn" id="copyBtn">复制今日记录</button>
 
+    <div class="selection-bar" id="selectionBar">
+        <button class="selection-tool-btn select-all-btn" id="selectAllBtn">全选</button>
+        <button class="selection-tool-btn selected-copy-btn" id="copySelectedBtn">复制</button>
+        <button class="selection-tool-btn delete-selected-btn" id="deleteSelectedBtn">删除</button>
+        <button class="selection-tool-btn merge-btn" id="mergeBtn">合并</button>
+    </div>
+
     <div class="toast" id="toast"></div>
 
     <script>
@@ -422,6 +707,14 @@
         
         // 当前日期
         let currentDate = new Date();
+
+        let isSelectionMode = false;
+        let selectedNoteIds = new Set();
+        let undoMergeState = null;
+        let undoDeleteState = null;
+        let toastTimer = null;
+        let longPressTimer = null;
+        let longPressTriggered = false;
         
         // 获取数据
         function getData() {
@@ -432,6 +725,29 @@
         // 保存数据
         function saveData(data) {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        function getCurrentDateKey() {
+            return formatDate(currentDate);
+        }
+
+        function getCurrentNotes() {
+            const data = getData();
+            return data[getCurrentDateKey()] || [];
+        }
+
+        function sortNotesByTime(notes) {
+            return [...notes].sort((a, b) => {
+                const timeA = a.timestamp || a.id || 0;
+                const timeB = b.timestamp || b.id || 0;
+                return timeA - timeB;
+            });
+        }
+
+        function closeAllMenus() {
+            document.querySelectorAll('.menu-dropdown').forEach(menu => {
+                menu.classList.remove('active');
+            });
         }
         
         // 格式化日期为 YYYY-MM-DD
@@ -475,14 +791,31 @@
         }
         
         // 显示提示
-        function showToast(message) {
+        function showToast(message, actionLabel, actionHandler, duration = 2000) {
             const toast = document.getElementById('toast');
-            toast.textContent = message;
+            toast.innerHTML = '';
+            toast.appendChild(document.createTextNode(message));
+
+            if (actionLabel && actionHandler) {
+                const actionButton = document.createElement('button');
+                actionButton.type = 'button';
+                actionButton.textContent = actionLabel;
+                actionButton.addEventListener('click', () => {
+                    actionHandler();
+                    toast.classList.remove('show');
+                });
+                toast.appendChild(actionButton);
+            }
+
+            if (toastTimer) {
+                clearTimeout(toastTimer);
+            }
+
             toast.classList.add('show');
             
-            setTimeout(() => {
+            toastTimer = setTimeout(() => {
                 toast.classList.remove('show');
-            }, 2000);
+            }, duration);
         }
         
         // 保存笔记
@@ -547,12 +880,164 @@
                 }
             }
         }
+
+        function setSelectionMode(active, keepSelection = false) {
+            if (active && document.querySelector('.edit-field.active')) {
+                showToast('请先完成编辑');
+                return;
+            }
+
+            isSelectionMode = active;
+            document.body.classList.toggle('selection-mode', isSelectionMode);
+
+            if (!keepSelection) {
+                selectedNoteIds.clear();
+            }
+
+            closeAllMenus();
+            renderNotes();
+        }
+
+        function updateSelectionControls(notes) {
+            const currentNotes = notes || getCurrentNotes();
+            const availableIds = new Set(currentNotes.map(note => note.id));
+            selectedNoteIds = new Set([...selectedNoteIds].filter(id => availableIds.has(id)));
+
+            if (currentNotes.length === 0 && isSelectionMode) {
+                isSelectionMode = false;
+                selectedNoteIds.clear();
+                document.body.classList.remove('selection-mode');
+            }
+
+            const selectBtn = document.getElementById('selectBtn');
+            const selectionStatus = document.getElementById('selectionStatus');
+            const selectAllBtn = document.getElementById('selectAllBtn');
+            const copySelectedBtn = document.getElementById('copySelectedBtn');
+            const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+            const mergeBtn = document.getElementById('mergeBtn');
+            const selectedCount = selectedNoteIds.size;
+
+            selectBtn.style.display = currentNotes.length === 0 && !isSelectionMode ? 'none' : '';
+            selectBtn.textContent = isSelectionMode ? '取消' : '选择';
+            selectBtn.classList.toggle('is-cancel', isSelectionMode);
+            selectionStatus.textContent = `已选 ${selectedCount} 条`;
+
+            selectAllBtn.textContent = selectedCount === currentNotes.length && currentNotes.length > 0 ? '清空' : '全选';
+            copySelectedBtn.disabled = selectedCount === 0;
+            deleteSelectedBtn.disabled = selectedCount === 0;
+            mergeBtn.disabled = selectedCount < 2;
+        }
+
+        function toggleNoteSelection(event, id) {
+            if (event) {
+                event.stopPropagation();
+            }
+
+            if (!isSelectionMode) {
+                setSelectionMode(true);
+            }
+
+            if (selectedNoteIds.has(id)) {
+                selectedNoteIds.delete(id);
+            } else {
+                selectedNoteIds.add(id);
+            }
+
+            renderNotes();
+        }
+
+        function handleNoteCardClick(event, id) {
+            if (longPressTriggered) {
+                longPressTriggered = false;
+                return;
+            }
+
+            if (!isSelectionMode || event.target.closest('.note-menu') || event.target.closest('.edit-field') || event.target.closest('.edit-actions')) {
+                return;
+            }
+
+            toggleNoteSelection(event, id);
+        }
+
+        function startLongPress(event, id) {
+            if (isSelectionMode || document.querySelector('.edit-field.active') || event.pointerType === 'mouse' || event.target.closest('.note-menu') || event.target.closest('.edit-field') || event.target.closest('.edit-actions')) {
+                return;
+            }
+
+            longPressTriggered = false;
+            longPressTimer = setTimeout(() => {
+                longPressTriggered = true;
+                setSelectionMode(true);
+                selectedNoteIds.add(id);
+                renderNotes();
+                showToast('已进入选择模式');
+            }, 520);
+        }
+
+        function cancelLongPress() {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }
+
+        function toggleSelectAll() {
+            const notes = getCurrentNotes();
+            if (!isSelectionMode || notes.length === 0) {
+                return;
+            }
+
+            if (selectedNoteIds.size === notes.length) {
+                selectedNoteIds.clear();
+            } else {
+                selectedNoteIds = new Set(notes.map(note => note.id));
+            }
+
+            renderNotes();
+        }
+
+        function getSelectedNotes() {
+            const notes = getCurrentNotes().filter(note => selectedNoteIds.has(note.id));
+            return sortNotesByTime(notes);
+        }
+
+        function buildMarkdown(notes, dateKey) {
+            return sortNotesByTime(notes).map(note =>
+                `**${dateKey} ${note.time}**\n${note.content}`
+            ).join('\n\n');
+        }
+
+        function restoreNotesSnapshot(state) {
+            if (!state) {
+                return;
+            }
+
+            const data = getData();
+            const currentNotes = data[state.dateKey] || [];
+            const originalIds = new Set(state.beforeNotes.map(note => note.id));
+            const removeIds = new Set(state.removeIds || []);
+            const notesAddedAfterAction = currentNotes.filter(note => {
+                return !originalIds.has(note.id) && !removeIds.has(note.id);
+            });
+
+            data[state.dateKey] = [...notesAddedAfterAction, ...state.beforeNotes].sort((a, b) => {
+                const timeA = a.timestamp || a.id || 0;
+                const timeB = b.timestamp || b.id || 0;
+                return timeB - timeA;
+            });
+
+            saveData(data);
+
+            if (getCurrentDateKey() === state.dateKey) {
+                renderNotes();
+            }
+        }
         
         // 渲染笔记列表
         function renderNotes() {
             const notesList = document.getElementById('notesList');
             const data = getData();
-            const dateKey = formatDate(currentDate);
+            const dateKey = getCurrentDateKey();
             const notes = data[dateKey] || [];
             
             if (notes.length === 0) {
@@ -564,11 +1049,15 @@
                         <p>还没有记录</p>
                     </div>
                 `;
+                updateSelectionControls(notes);
                 return;
             }
             
             notesList.innerHTML = notes.map(note => `
-                <div class="note-card" data-id="${note.id}">
+                <div class="note-card ${selectedNoteIds.has(note.id) ? 'selected' : ''}" data-id="${note.id}" onclick="handleNoteCardClick(event, ${note.id})" onpointerdown="startLongPress(event, ${note.id})" onpointerup="cancelLongPress()" onpointerleave="cancelLongPress()" onpointercancel="cancelLongPress()">
+                    <button class="select-control" aria-label="${selectedNoteIds.has(note.id) ? '取消选择' : '选择记录'}" onclick="toggleNoteSelection(event, ${note.id})">
+                        <span class="select-dot">${selectedNoteIds.has(note.id) ? '✓' : ''}</span>
+                    </button>
                     <div class="note-header">
                         <div class="note-time">${note.time}</div>
                         <div class="note-menu">
@@ -587,6 +1076,8 @@
                     </div>
                 </div>
             `).join('');
+
+            updateSelectionControls(notes);
         }
         
         // 转义HTML
@@ -721,11 +1212,229 @@
 
             return Promise.reject(new Error('Clipboard is unavailable'));
         }
+
+        function exportNotesBackup() {
+            const data = getData();
+            const totalCount = Object.values(data).reduce((total, notes) => {
+                return total + (Array.isArray(notes) ? notes.length : 0);
+            }, 0);
+
+            if (totalCount === 0) {
+                showToast('暂无记录可导出');
+                return;
+            }
+
+            const backup = {
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                data: data
+            };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `daily-notes-backup-${formatDate(new Date())}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showToast(`已导出 ${totalCount} 条记录`);
+        }
+
+        function normalizeImportedData(payload) {
+            const importedData = payload && payload.data ? payload.data : payload;
+            const normalized = {};
+            let generatedId = Date.now();
+
+            if (!importedData || typeof importedData !== 'object' || Array.isArray(importedData)) {
+                return normalized;
+            }
+
+            Object.entries(importedData).forEach(([dateKey, notes]) => {
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey) || !Array.isArray(notes)) {
+                    return;
+                }
+
+                const normalizedNotes = notes
+                    .filter(note => note && typeof note.content === 'string' && note.content.trim())
+                    .map(note => {
+                        const fallbackId = generatedId++;
+                        const timestamp = Number(note.timestamp || note.id || fallbackId);
+                        return {
+                            id: Number(note.id || fallbackId),
+                            content: note.content,
+                            time: typeof note.time === 'string' && note.time ? note.time : '00:00',
+                            timestamp: Number.isFinite(timestamp) ? timestamp : fallbackId
+                        };
+                    });
+
+                if (normalizedNotes.length > 0) {
+                    normalized[dateKey] = normalizedNotes;
+                }
+            });
+
+            return normalized;
+        }
+
+        function importNotesBackup(file) {
+            if (!file) {
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = () => {
+                try {
+                    const imported = normalizeImportedData(JSON.parse(reader.result));
+                    const data = getData();
+                    let importedCount = 0;
+
+                    Object.entries(imported).forEach(([dateKey, notes]) => {
+                        const existingNotes = data[dateKey] || [];
+                        const existingIds = new Set(existingNotes.map(note => note.id));
+                        const newNotes = notes.filter(note => !existingIds.has(note.id));
+
+                        if (newNotes.length > 0) {
+                            data[dateKey] = [...newNotes, ...existingNotes].sort((a, b) => {
+                                const timeA = a.timestamp || a.id || 0;
+                                const timeB = b.timestamp || b.id || 0;
+                                return timeB - timeA;
+                            });
+                            importedCount += newNotes.length;
+                        }
+                    });
+
+                    if (importedCount === 0) {
+                        showToast('没有可导入的新记录');
+                        return;
+                    }
+
+                    saveData(data);
+                    renderNotes();
+                    showToast(`已导入 ${importedCount} 条记录`);
+                } catch (error) {
+                    showToast('导入失败');
+                }
+            };
+
+            reader.onerror = () => {
+                showToast('导入失败');
+            };
+
+            reader.readAsText(file);
+        }
+
+        function copySelectedNotes() {
+            const selectedNotes = getSelectedNotes();
+            const dateKey = getCurrentDateKey();
+
+            if (selectedNotes.length === 0) {
+                showToast('请先选择记录');
+                return;
+            }
+
+            copyTextToClipboard(buildMarkdown(selectedNotes, dateKey)).then(() => {
+                showToast(`已复制 ${selectedNotes.length} 条记录`);
+            }).catch(() => {
+                showToast('复制失败');
+            });
+        }
+
+        function deleteSelectedNotes() {
+            const selectedNotes = getSelectedNotes();
+            const dateKey = getCurrentDateKey();
+
+            if (selectedNotes.length === 0) {
+                showToast('请先选择记录');
+                return;
+            }
+
+            if (!confirm(`确定要删除选中的 ${selectedNotes.length} 条记录吗?`)) {
+                return;
+            }
+
+            const data = getData();
+            const notes = data[dateKey] || [];
+            const selectedIds = new Set(selectedNotes.map(note => note.id));
+
+            undoDeleteState = {
+                dateKey: dateKey,
+                beforeNotes: notes.map(note => ({ ...note }))
+            };
+
+            data[dateKey] = notes.filter(note => !selectedIds.has(note.id));
+
+            if (data[dateKey].length === 0) {
+                delete data[dateKey];
+            }
+
+            saveData(data);
+            setSelectionMode(false);
+            showToast(`已删除 ${selectedNotes.length} 条记录`, '撤销', undoDelete, 5000);
+        }
+
+        function undoDelete() {
+            if (!undoDeleteState) {
+                return;
+            }
+
+            restoreNotesSnapshot(undoDeleteState);
+            undoDeleteState = null;
+            showToast('已撤销删除');
+        }
+
+        function mergeSelectedNotes() {
+            const selectedNotes = getSelectedNotes();
+            const dateKey = getCurrentDateKey();
+
+            if (selectedNotes.length < 2) {
+                showToast('至少选择 2 条才能合并');
+                return;
+            }
+
+            const data = getData();
+            const notes = data[dateKey] || [];
+            const selectedIds = new Set(selectedNotes.map(note => note.id));
+            const firstNote = selectedNotes[0];
+            const mergedTimestamp = firstNote.timestamp || firstNote.id || Date.now();
+            const mergedNote = {
+                id: Date.now(),
+                content: selectedNotes.map(note => note.content).join('\n\n'),
+                time: firstNote.time,
+                timestamp: mergedTimestamp
+            };
+
+            undoMergeState = {
+                dateKey: dateKey,
+                beforeNotes: notes.map(note => ({ ...note })),
+                removeIds: [mergedNote.id]
+            };
+
+            data[dateKey] = [mergedNote, ...notes.filter(note => !selectedIds.has(note.id))].sort((a, b) => {
+                const timeA = a.timestamp || a.id || 0;
+                const timeB = b.timestamp || b.id || 0;
+                return timeB - timeA;
+            });
+
+            saveData(data);
+            setSelectionMode(false);
+            showToast(`已合并 ${selectedNotes.length} 条`, '撤销', undoMerge, 5000);
+        }
+
+        function undoMerge() {
+            if (!undoMergeState) {
+                return;
+            }
+
+            restoreNotesSnapshot(undoMergeState);
+            undoMergeState = null;
+            showToast('已撤销合并');
+        }
         
         // 复制今日记录
         function copyTodayNotes() {
             const data = getData();
-            const dateKey = formatDate(currentDate);
+            const dateKey = getCurrentDateKey();
             const notes = data[dateKey] || [];
             
             if (notes.length === 0) {
@@ -733,15 +1442,8 @@
                 return;
             }
             
-            const sortedNotes = [...notes].sort((a, b) => {
-                const timeA = a.timestamp || a.id || 0;
-                const timeB = b.timestamp || b.id || 0;
-                return timeA - timeB;
-            });
-            
-            const markdown = sortedNotes.map(note => 
-                `**${dateKey} ${note.time}**\n${note.content}`
-            ).join('\n\n');
+            const sortedNotes = sortNotesByTime(notes);
+            const markdown = buildMarkdown(sortedNotes, dateKey);
             
             copyTextToClipboard(markdown).then(() => {
                 showToast(`已复制 ${sortedNotes.length} 条记录`);
@@ -752,28 +1454,69 @@
         
         // 事件监听
         document.getElementById('saveBtn').addEventListener('click', saveNote);
+        document.getElementById('exportBtn').addEventListener('click', exportNotesBackup);
+        document.getElementById('importBtn').addEventListener('click', () => {
+            document.getElementById('importFile').click();
+        });
+        document.getElementById('importFile').addEventListener('change', (e) => {
+            importNotesBackup(e.target.files[0]);
+            e.target.value = '';
+        });
         document.getElementById('noteInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                 saveNote();
             }
         });
+
+        document.getElementById('selectBtn').addEventListener('click', () => {
+            setSelectionMode(!isSelectionMode);
+        });
         
         document.getElementById('prevDay').addEventListener('click', () => {
+            if (isSelectionMode) {
+                setSelectionMode(false);
+            }
             currentDate.setDate(currentDate.getDate() - 1);
             updateDateDisplay();
         });
         
         document.getElementById('nextDay').addEventListener('click', () => {
+            if (isSelectionMode) {
+                setSelectionMode(false);
+            }
             currentDate.setDate(currentDate.getDate() + 1);
             updateDateDisplay();
         });
         
         document.getElementById('todayBtn').addEventListener('click', () => {
+            if (isSelectionMode) {
+                setSelectionMode(false);
+            }
             currentDate = new Date();
             updateDateDisplay();
         });
         
         document.getElementById('copyBtn').addEventListener('click', copyTodayNotes);
+        document.getElementById('selectAllBtn').addEventListener('click', toggleSelectAll);
+        document.getElementById('copySelectedBtn').addEventListener('click', copySelectedNotes);
+        document.getElementById('deleteSelectedBtn').addEventListener('click', deleteSelectedNotes);
+        document.getElementById('mergeBtn').addEventListener('click', mergeSelectedNotes);
+
+        document.addEventListener('keydown', (e) => {
+            if (!isSelectionMode) {
+                return;
+            }
+
+            if (e.key === 'Escape') {
+                setSelectionMode(false);
+            }
+
+            if (e.key.toLowerCase() === 'a' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                selectedNoteIds = new Set(getCurrentNotes().map(note => note.id));
+                renderNotes();
+            }
+        });
         
         // 初始化
         updateDateDisplay();

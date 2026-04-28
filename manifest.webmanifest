@@ -2,9 +2,11 @@
   "name": "日记",
   "short_name": "日记",
   "description": "一个轻量级的每日想法记录工具。",
-  "start_url": "./",
+  "id": "./daily-notes.html",
+  "start_url": "./daily-notes.html",
   "scope": "./",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#fafaf9",
   "theme_color": "#fafaf9",
   "icons": [
