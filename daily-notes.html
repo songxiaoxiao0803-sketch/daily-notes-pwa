@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#fafaf9">
+    <meta name="theme-color" content="#faf9f7">
     <meta name="application-name" content="日记">
     <meta name="apple-mobile-web-app-title" content="日记">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,18 +22,25 @@
         }
 
         :root {
-            --bg-primary: #fafaf9;
+            --bg-primary: #faf9f7;
             --bg-card: #ffffff;
-            --bg-selected: #fffbeb;
+            --bg-selected: #fbf6ec;
             --text-primary: #1c1917;
             --text-secondary: #78716c;
             --text-tertiary: #a8a29e;
-            --border: #e7e5e4;
+            --border: #e9e6e1;
+            --border-strong: #ddd8d1;
             --border-selected: #d6d3d1;
             --accent: #292524;
-            --hover: #f5f5f4;
-            --shadow: rgba(0, 0, 0, 0.04);
-            --shadow-raised: rgba(0, 0, 0, 0.12);
+            --hover: #f4f2ee;
+            --shadow: rgba(31, 27, 22, 0.05);
+            --shadow-raised: rgba(31, 27, 22, 0.14);
+            --obsidian: #6457c9;
+            --obsidian-hover: #564ab0;
+            --sent: #4f7a52;
+            --sent-bg: #eef3ec;
+            --unsent: #9a6a2e;
+            --unsent-bg: #f7efe1;
         }
 
         body {
@@ -42,12 +49,13 @@
             color: var(--text-primary);
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .container {
             max-width: 680px;
             margin: 0 auto;
-            padding: calc(24px + env(safe-area-inset-top)) 20px calc(96px + env(safe-area-inset-bottom));
+            padding: calc(20px + env(safe-area-inset-top)) 20px calc(108px + env(safe-area-inset-bottom));
         }
 
         /* Header */
@@ -55,8 +63,11 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 32px;
-            padding: 16px 0;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+            padding: 8px 0 16px;
+            border-bottom: 1px solid var(--border);
         }
 
         .header-actions {
@@ -68,28 +79,270 @@
         .date-nav {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 10px;
         }
 
         .date-display {
-            font-size: 18px;
-            font-weight: 500;
-            letter-spacing: -0.01em;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
             color: var(--text-primary);
-            min-width: 140px;
+            min-width: 132px;
             text-align: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-family: inherit;
+            padding: 4px 10px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .date-display:hover {
+            background: var(--hover);
+        }
+
+        .date-display svg {
+            width: 14px;
+            height: 14px;
+            color: var(--text-tertiary);
+            flex: none;
+        }
+
+        /* Calendar */
+        .cal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(28, 25, 23, 0.38);
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: calc(64px + env(safe-area-inset-top)) 16px 24px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.22s;
+            z-index: 1050;
+        }
+
+        .cal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .cal-sheet {
+            background: var(--bg-card);
+            width: 100%;
+            max-width: 400px;
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 16px 44px var(--shadow-raised);
+            transform: translateY(-12px);
+            transition: transform 0.22s;
+        }
+
+        .cal-overlay.show .cal-sheet {
+            transform: translateY(0);
+        }
+
+        .cal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .cal-month {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .cal-nav {
+            display: flex;
+            gap: 4px;
+        }
+
+        .cal-nav button {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            font-size: 17px;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .cal-nav button:hover {
+            background: var(--hover);
+            color: var(--text-primary);
+        }
+
+        .cal-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            margin-bottom: 4px;
+        }
+
+        .cal-weekdays span {
+            text-align: center;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            padding: 4px 0;
+        }
+
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+
+        .cal-cell {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            border: none;
+            background: none;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            font-family: inherit;
+            color: var(--text-primary);
+            transition: background-color 0.16s;
+        }
+
+        .cal-cell.empty {
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .cal-cell:not(.empty):hover {
+            background: var(--hover);
+        }
+
+        .cal-cell .day-num {
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1;
+        }
+
+        .cal-cell.other-month .day-num {
+            color: var(--text-tertiary);
+            opacity: 0.55;
+        }
+
+        .cal-cell .day-count {
+            font-size: 9px;
+            font-weight: 600;
+            line-height: 1;
+            padding: 1px 5px;
+            border-radius: 999px;
+            background: var(--unsent-bg);
+            color: var(--unsent);
+            min-height: 12px;
+        }
+
+        .cal-cell .day-count.all-sent {
+            background: var(--sent-bg);
+            color: var(--sent);
+        }
+
+        .cal-cell .day-count.none {
+            visibility: hidden;
+        }
+
+        .cal-cell.is-today {
+            box-shadow: inset 0 0 0 1.5px var(--border-strong);
+        }
+
+        .cal-cell.is-selected {
+            background: var(--accent);
+        }
+
+        .cal-cell.is-selected .day-num {
+            color: white;
+        }
+
+        .cal-cell.is-selected .day-count {
+            background: rgba(255, 255, 255, 0.22);
+            color: white;
+        }
+
+        .cal-cell.is-selected:hover {
+            background: var(--accent);
+        }
+
+        .cal-stats {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+
+        .cal-stat {
+            flex: 1;
+            text-align: center;
+        }
+
+        .cal-stat .num {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .cal-stat .lbl {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 2px;
+        }
+
+        .cal-today-btn {
+            display: block;
+            width: 100%;
+            margin-top: 12px;
+            padding: 11px;
+            border-radius: 10px;
+            border: 1px solid var(--border-strong);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .cal-today-btn:hover {
+            background: var(--hover);
         }
 
         .nav-btn {
             background: none;
             border: none;
-            color: var(--text-secondary);
+            color: var(--text-tertiary);
             cursor: pointer;
-            padding: 8px;
-            border-radius: 6px;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
             transition: all 0.2s;
-            font-size: 20px;
+            font-size: 19px;
             line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .nav-btn:hover {
@@ -97,31 +350,21 @@
             color: var(--text-primary);
         }
 
-        .today-btn {
-            background: none;
-            border: 1px solid var(--border);
+        .today-btn, .select-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
             color: var(--text-secondary);
             cursor: pointer;
-            padding: 6px 12px;
-            border-radius: 6px;
+            padding: 7px 13px;
+            border-radius: 8px;
             font-size: 13px;
-            transition: all 0.2s;
+            font-weight: 500;
+            transition: border-color 0.2s, color 0.2s, background-color 0.2s, transform 0.2s;
         }
 
         .today-btn:hover, .select-btn:hover {
             border-color: var(--text-secondary);
             color: var(--text-primary);
-        }
-
-        .select-btn {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            cursor: pointer;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            transition: border-color 0.2s, color 0.2s, background-color 0.2s, transform 0.2s;
         }
 
         .select-btn:active {
@@ -146,7 +389,9 @@
             display: block;
         }
 
-        body.selection-mode .today-btn {
+        body.selection-mode .today-btn,
+        body.selection-mode .icon-btn,
+        body.selection-mode #syncBtn {
             display: none;
         }
 
@@ -154,24 +399,86 @@
             opacity: 0.45;
         }
 
+        /* Icon buttons (sync + settings) */
+        .icon-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            font-size: 16px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .icon-btn:hover {
+            border-color: var(--text-secondary);
+            color: var(--text-primary);
+        }
+
+        .icon-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Sync button states */
+        #syncBtn .sync-dot {
+            position: absolute;
+            right: -2px;
+            top: -2px;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            border: 1.5px solid var(--bg-primary);
+            background: var(--text-tertiary);
+            transition: background-color 0.2s;
+        }
+
+        #syncBtn.s-off .sync-dot { background: var(--text-tertiary); }
+        #syncBtn.s-ok { color: var(--sent); border-color: #cfe0cd; }
+        #syncBtn.s-ok .sync-dot { background: var(--sent); }
+        #syncBtn.s-error { color: var(--unsent); border-color: #e6d3b4; }
+        #syncBtn.s-error .sync-dot { background: #c2410c; }
+        #syncBtn.s-syncing { color: var(--obsidian); border-color: #cfc8ef; }
+        #syncBtn.s-syncing .sync-dot { background: var(--obsidian); }
+        #syncBtn.s-syncing svg { animation: spin 1s linear infinite; }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         /* Input Area */
         .input-area {
             background: var(--bg-card);
-            border-radius: 12px;
+            border-radius: 14px;
             border: 1px solid var(--border);
-            padding: 16px;
-            margin-bottom: 24px;
+            padding: 18px;
+            margin-bottom: 28px;
             box-shadow: 0 1px 2px var(--shadow);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-area:focus-within {
+            border-color: var(--border-strong);
+            box-shadow: 0 4px 16px var(--shadow);
         }
 
         .input-field {
             width: 100%;
             border: none;
             outline: none;
-            font-size: 15px;
-            line-height: 1.6;
+            font-size: 16px;
+            line-height: 1.65;
             resize: none;
-            min-height: 80px;
+            min-height: 120px;
+            max-height: 56vh;
+            overflow-y: auto;
             font-family: inherit;
             color: var(--text-primary);
         }
@@ -185,8 +492,8 @@
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            margin-top: 12px;
-            padding-top: 12px;
+            margin-top: 14px;
+            padding-top: 14px;
             border-top: 1px solid var(--border);
         }
 
@@ -200,8 +507,8 @@
             background: var(--hover);
             color: var(--text-secondary);
             border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
+            padding: 8px 13px;
+            border-radius: 8px;
             font-size: 13px;
             cursor: pointer;
             transition: background-color 0.2s, color 0.2s, transform 0.2s;
@@ -209,6 +516,7 @@
 
         .secondary-action-btn:hover {
             color: var(--text-primary);
+            background: #ece9e3;
         }
 
         .secondary-action-btn:active {
@@ -219,8 +527,8 @@
             background: var(--accent);
             color: white;
             border: none;
-            padding: 8px 20px;
-            border-radius: 6px;
+            padding: 9px 22px;
+            border-radius: 8px;
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
@@ -238,6 +546,29 @@
             transform: none;
         }
 
+        /* Day summary line */
+        .day-summary {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 14px;
+            padding: 0 4px;
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        .day-summary .count {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .day-summary .pending {
+            color: var(--unsent);
+            font-weight: 500;
+        }
+
+        .day-summary.empty { display: none; }
+
         /* Notes List */
         .notes-list {
             display: flex;
@@ -247,9 +578,9 @@
 
         .note-card {
             background: var(--bg-card);
-            border-radius: 12px;
+            border-radius: 14px;
             border: 1px solid var(--border);
-            padding: 16px;
+            padding: 16px 18px;
             position: relative;
             box-shadow: 0 1px 2px var(--shadow);
             transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, padding-left 0.2s;
@@ -257,7 +588,8 @@
         }
 
         .note-card:hover {
-            border-color: var(--text-tertiary);
+            border-color: var(--border-strong);
+            box-shadow: 0 3px 12px var(--shadow);
         }
 
         body.selection-mode .note-card {
@@ -281,7 +613,7 @@
             display: flex;
             align-items: flex-start;
             justify-content: center;
-            padding-top: 8px;
+            padding-top: 9px;
             border: none;
             background: transparent;
             cursor: pointer;
@@ -322,14 +654,54 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 10px;
             margin-bottom: 8px;
+        }
+
+        .note-meta {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            min-width: 0;
         }
 
         .note-time {
             font-size: 13px;
             color: var(--text-secondary);
-            font-weight: 500;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
         }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 999px;
+            line-height: 1.5;
+            white-space: nowrap;
+        }
+
+        .status-pill .pdot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .status-pill.sent {
+            color: var(--sent);
+            background: var(--sent-bg);
+        }
+
+        .status-pill.unsent {
+            color: var(--unsent);
+            background: var(--unsent-bg);
+        }
+
+        body.selection-mode .status-pill { display: none; }
 
         .note-menu {
             position: relative;
@@ -345,7 +717,7 @@
             color: var(--text-tertiary);
             cursor: pointer;
             padding: 4px 8px;
-            border-radius: 4px;
+            border-radius: 6px;
             font-size: 18px;
             line-height: 1;
             transition: all 0.2s;
@@ -363,10 +735,11 @@
             margin-top: 4px;
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
             z-index: 10;
-            min-width: 100px;
+            min-width: 120px;
+            overflow: hidden;
             display: none;
         }
 
@@ -375,7 +748,7 @@
         }
 
         .menu-item {
-            padding: 10px 16px;
+            padding: 11px 16px;
             cursor: pointer;
             font-size: 14px;
             transition: all 0.2s;
@@ -409,15 +782,18 @@
         .edit-field {
             display: none;
             width: 100%;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 8px;
-            font-size: 15px;
+            border: 1px solid var(--border-strong);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 16px;
             line-height: 1.7;
             resize: none;
-            min-height: 60px;
+            min-height: 72px;
+            max-height: 56vh;
+            overflow-y: auto;
             font-family: inherit;
             margin-bottom: 8px;
+            outline: none;
         }
 
         .edit-field.active {
@@ -435,8 +811,8 @@
         }
 
         .edit-btn, .cancel-btn {
-            padding: 6px 16px;
-            border-radius: 6px;
+            padding: 7px 16px;
+            border-radius: 8px;
             font-size: 13px;
             cursor: pointer;
             border: none;
@@ -461,53 +837,357 @@
         /* Empty State */
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
+            padding: 64px 20px;
             color: var(--text-tertiary);
         }
 
         .empty-state svg {
-            width: 80px;
-            height: 80px;
+            width: 72px;
+            height: 72px;
             margin-bottom: 16px;
-            opacity: 0.3;
+            opacity: 0.28;
         }
 
         .empty-state p {
             font-size: 15px;
         }
 
-        /* Copy Button */
-        .copy-btn {
+        /* Bottom action bar */
+        .action-bar {
             position: fixed;
             bottom: calc(24px + env(safe-area-inset-bottom));
-            right: 50%;
-            transform: translateX(50%);
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 14px 28px;
-            border-radius: 24px;
-            font-size: 15px;
-            font-weight: 500;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            align-items: center;
             z-index: 100;
         }
 
-        body.selection-mode .copy-btn {
+        body.selection-mode .action-bar,
+        .action-bar.hidden {
             display: none;
         }
 
-        .copy-btn:hover {
-            transform: translateX(50%) translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        .obsidian-btn {
+            background: var(--obsidian);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 26px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(75, 63, 158, 0.32);
+            transition: transform 0.2s, box-shadow 0.3s, background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
         }
 
-        .copy-btn:active {
-            transform: translateX(50%) translateY(0);
+        .obsidian-btn svg {
+            width: 17px;
+            height: 17px;
         }
 
+        .obsidian-btn:hover {
+            transform: translateY(-2px);
+            background: var(--obsidian-hover);
+            box-shadow: 0 8px 22px rgba(75, 63, 158, 0.4);
+        }
+
+        .obsidian-btn:active {
+            transform: translateY(0);
+        }
+
+        .obsidian-btn.all-synced {
+            background: var(--bg-card);
+            color: var(--sent);
+            box-shadow: 0 4px 14px var(--shadow);
+            cursor: default;
+        }
+
+        .obsidian-btn.all-synced:hover {
+            transform: none;
+        }
+
+        .bar-icon-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 20px;
+            line-height: 1;
+            box-shadow: 0 4px 14px var(--shadow);
+            transition: transform 0.2s, color 0.2s, border-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bar-icon-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--border-strong);
+        }
+
+        .bar-icon-btn:active {
+            transform: scale(0.94);
+        }
+
+        .bar-menu {
+            position: fixed;
+            left: 50%;
+            bottom: calc(88px + env(safe-area-inset-bottom));
+            transform: translateX(-50%) translateY(8px);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 14px 36px var(--shadow-raised);
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 220px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.18s, transform 0.18s;
+            z-index: 106;
+        }
+
+        .bar-menu.show {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .bar-menu button {
+            text-align: left;
+            background: none;
+            border: none;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background-color 0.15s;
+            font-family: inherit;
+        }
+
+        .bar-menu button:hover {
+            background: var(--hover);
+        }
+
+        .bar-menu button .sub {
+            color: var(--text-tertiary);
+            font-size: 12px;
+            margin-left: auto;
+        }
+
+        /* Settings sheet */
+        .settings-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(28, 25, 23, 0.38);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s;
+            z-index: 1100;
+        }
+
+        .settings-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .settings-sheet {
+            background: var(--bg-card);
+            width: 100%;
+            max-width: 520px;
+            max-height: 88vh;
+            overflow-y: auto;
+            border-radius: 20px 20px 0 0;
+            padding: 22px 22px calc(24px + env(safe-area-inset-bottom));
+            box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.18);
+            transform: translateY(20px);
+            transition: transform 0.25s;
+        }
+
+        .settings-overlay.show .settings-sheet {
+            transform: translateY(0);
+        }
+
+        .sheet-grip {
+            width: 38px;
+            height: 4px;
+            border-radius: 999px;
+            background: var(--border-strong);
+            margin: 0 auto 18px;
+        }
+
+        .settings-section {
+            margin-bottom: 26px;
+        }
+
+        .settings-section:last-of-type {
+            margin-bottom: 18px;
+        }
+
+        .section-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .section-head .ico {
+            width: 26px;
+            height: 26px;
+            border-radius: 7px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: none;
+        }
+
+        .section-head .ico svg { width: 15px; height: 15px; }
+        .section-head .ico.obs { background: #eceafa; color: var(--obsidian); }
+        .section-head .ico.sync { background: var(--sent-bg); color: var(--sent); }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .settings-label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .settings-input {
+            width: 100%;
+            border: 1px solid var(--border-strong);
+            border-radius: 9px;
+            padding: 11px 12px;
+            font-size: 16px;
+            font-family: inherit;
+            color: var(--text-primary);
+            outline: none;
+            margin-bottom: 14px;
+            background: var(--bg-primary);
+            transition: border-color 0.2s;
+        }
+
+        .settings-input:focus {
+            border-color: var(--obsidian);
+            background: var(--bg-card);
+        }
+
+        .settings-hint {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            line-height: 1.65;
+            margin-bottom: 16px;
+        }
+
+        .settings-hint a {
+            color: var(--obsidian);
+        }
+
+        .sync-status-line {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 11px 13px;
+            margin-bottom: 14px;
+        }
+
+        .sync-status-line .sdot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-tertiary);
+            flex: none;
+        }
+
+        .sync-status-line.ok .sdot { background: var(--sent); }
+        .sync-status-line.error .sdot { background: #c2410c; }
+        .sync-status-line.syncing .sdot { background: var(--obsidian); }
+
+        .sync-btn-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .pill-btn {
+            flex: 1;
+            padding: 11px 14px;
+            border-radius: 9px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid var(--border-strong);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .pill-btn:active { transform: scale(0.97); }
+        .pill-btn.primary {
+            background: var(--obsidian);
+            border-color: var(--obsidian);
+            color: white;
+        }
+        .pill-btn.primary:hover { background: var(--obsidian-hover); }
+        .pill-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+        .link-btn {
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            font-size: 13px;
+            cursor: pointer;
+            padding: 4px 0;
+            font-family: inherit;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .link-btn:hover { color: #c2410c; }
+
+        .settings-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding-top: 6px;
+            border-top: 1px solid var(--border);
+        }
+
+        .settings-cancel, .settings-save {
+            padding: 11px 22px;
+            font-size: 14px;
+            border-radius: 9px;
+        }
+
+        /* Selection action bar */
         .selection-bar {
             position: fixed;
             left: 50%;
@@ -518,7 +1198,7 @@
             grid-template-columns: auto 1fr 1fr 1fr;
             gap: 8px;
             align-items: center;
-            background: rgba(255, 255, 255, 0.96);
+            background: rgba(255, 255, 255, 0.97);
             border-radius: 18px;
             padding: 8px;
             box-shadow: 0 12px 32px var(--shadow-raised);
@@ -544,57 +1224,35 @@
             transition: opacity 0.2s, transform 0.2s, background-color 0.2s;
         }
 
-        .selection-tool-btn:active {
-            transform: scale(0.96);
-        }
+        .selection-tool-btn:active { transform: scale(0.96); }
+        .selection-tool-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-        .selection-tool-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .select-all-btn {
-            min-width: 72px;
-            background: transparent;
-            color: var(--text-secondary);
-        }
-
-        .selected-copy-btn {
-            background: var(--hover);
-            color: var(--text-primary);
-        }
-
-        .delete-selected-btn {
-            background: #fef2f2;
-            color: #b91c1c;
-        }
-
-        .merge-btn {
-            background: var(--accent);
-            color: white;
-        }
+        .select-all-btn { min-width: 72px; background: transparent; color: var(--text-secondary); }
+        .selected-copy-btn { background: var(--hover); color: var(--text-primary); }
+        .delete-selected-btn { background: #fef2f2; color: #b91c1c; }
+        .merge-btn { background: var(--accent); color: white; }
 
         /* Toast */
         .toast {
             position: fixed;
-            top: calc(24px + env(safe-area-inset-top));
-            right: 50%;
-            transform: translateX(50%) translateY(-100px);
+            top: calc(20px + env(safe-area-inset-top));
+            left: 50%;
+            transform: translateX(-50%) translateY(-120px);
             background: var(--accent);
             color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
+            padding: 12px 22px;
+            border-radius: 10px;
             font-size: 14px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
             opacity: 0;
             transition: all 0.3s;
-            z-index: 1000;
+            z-index: 1300;
+            max-width: calc(100vw - 32px);
         }
 
         .toast button {
             appearance: none;
-            margin-left: 12px;
+            margin-left: 14px;
             padding: 0;
             border: none;
             background: transparent;
@@ -607,45 +1265,20 @@
         }
 
         .toast.show {
-            transform: translateX(50%) translateY(0);
+            transform: translateX(-50%) translateY(0);
             opacity: 1;
         }
 
         @media (max-width: 520px) {
-            .container {
-                padding-left: 16px;
-                padding-right: 16px;
-            }
-
-            .header {
-                gap: 12px;
-            }
-
-            .date-nav {
-                gap: 8px;
-            }
-
-            .date-display {
-                min-width: 104px;
-                font-size: 16px;
-            }
-
-            .selection-bar {
-                width: calc(100vw - 24px);
-                grid-template-columns: auto 1fr 1fr 1fr;
-            }
-
-            .input-actions {
-                align-items: stretch;
-            }
-
-            .backup-actions {
-                flex: 1;
-            }
-
-            .secondary-action-btn {
-                flex: 1;
-            }
+            .container { padding-left: 16px; padding-right: 16px; }
+            .header { gap: 10px; }
+            .date-nav { gap: 6px; }
+            .date-display { min-width: 100px; font-size: 18px; }
+            .today-btn, .select-btn { padding: 7px 11px; }
+            .selection-bar { width: calc(100vw - 24px); }
+            .input-actions { align-items: stretch; }
+            .backup-actions { flex: 1; }
+            .secondary-action-btn { flex: 1; }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -660,23 +1293,26 @@
     <div class="container">
         <div class="header">
             <div class="date-nav">
-                <button class="nav-btn" id="prevDay">←</button>
-                <div class="date-display" id="dateDisplay"></div>
-                <button class="nav-btn" id="nextDay">→</button>
+                <button class="nav-btn" id="prevDay" aria-label="前一天">←</button>
+                <button class="date-display" id="dateDisplay" aria-label="打开日历"></button>
+                <button class="nav-btn" id="nextDay" aria-label="后一天">→</button>
             </div>
             <div class="header-actions">
                 <div class="selection-status" id="selectionStatus">已选 0 条</div>
                 <button class="today-btn" id="todayBtn">今天</button>
                 <button class="select-btn" id="selectBtn">选择</button>
+                <button class="icon-btn" id="syncBtn" aria-label="云同步">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9 9 0 0 0-8 5"/><path d="M3 12a9 9 0 0 0 9 9 9 9 0 0 0 8-5"/><path d="M3 4v4h4"/><path d="M21 20v-4h-4"/></svg>
+                    <span class="sync-dot"></span>
+                </button>
+                <button class="icon-btn" id="settingsBtn" aria-label="设置">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
             </div>
         </div>
 
         <div class="input-area">
-            <textarea 
-                class="input-field" 
-                id="noteInput" 
-                placeholder="记录此刻的想法..."
-            ></textarea>
+            <textarea class="input-field" id="noteInput" placeholder="记录此刻的想法..."></textarea>
             <div class="input-actions">
                 <div class="backup-actions">
                     <button class="secondary-action-btn" id="exportBtn">导出</button>
@@ -687,10 +1323,62 @@
             </div>
         </div>
 
+        <div class="day-summary empty" id="daySummary"></div>
         <div class="notes-list" id="notesList"></div>
     </div>
 
-    <button class="copy-btn" id="copyBtn">复制今日记录</button>
+    <div class="action-bar" id="actionBar">
+        <button class="obsidian-btn" id="sendUnsentBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+            <span id="sendLabel">发送到 Obsidian</span>
+        </button>
+        <button class="bar-icon-btn" id="moreBtn" aria-label="更多操作">⋯</button>
+    </div>
+
+    <div class="bar-menu" id="barMenu">
+        <button id="resendAllBtn"><span>全量重发当天</span><span class="sub" id="resendCount"></span></button>
+        <button id="copyMenuBtn"><span>复制当天为 Markdown</span></button>
+    </div>
+
+    <div class="settings-overlay" id="settingsOverlay">
+        <div class="settings-sheet">
+            <div class="sheet-grip"></div>
+
+            <div class="settings-section">
+                <div class="section-head">
+                    <span class="ico obs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></span>
+                    <span class="section-title">Obsidian</span>
+                </div>
+                <label class="settings-label" for="vaultInput">Vault 名称</label>
+                <input class="settings-input" id="vaultInput" placeholder="kalamis-vault" autocapitalize="off" autocorrect="off" spellcheck="false">
+                <label class="settings-label" for="pathInput">Daily Note 路径</label>
+                <input class="settings-input" id="pathInput" placeholder="Daily notes/{date}" autocapitalize="off" autocorrect="off" spellcheck="false">
+                <div class="settings-hint">{date} 会替换成当前查看日期（如 2026-06-18）。发送会把记录追加到对应日记文件末尾。</div>
+            </div>
+
+            <div class="settings-section">
+                <div class="section-head">
+                    <span class="ico sync"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9 9 0 0 0-8 5"/><path d="M3 12a9 9 0 0 0 9 9 9 9 0 0 0 8-5"/><path d="M3 4v4h4"/><path d="M21 20v-4h-4"/></svg></span>
+                    <span class="section-title">多设备同步</span>
+                </div>
+                <div class="sync-status-line" id="syncStatusLine"><span class="sdot"></span><span id="syncStatusText">未开启</span></div>
+                <label class="settings-label" for="tokenInput">GitHub Token</label>
+                <input class="settings-input" id="tokenInput" type="password" placeholder="ghp_… 或 github_pat_…" autocapitalize="off" autocorrect="off" spellcheck="false">
+                <label class="settings-label" for="gistInput">Gist ID（留空将自动创建）</label>
+                <input class="settings-input" id="gistInput" placeholder="首次同步后自动填入" autocapitalize="off" autocorrect="off" spellcheck="false">
+                <div class="sync-btn-row">
+                    <button class="pill-btn primary" id="syncNowBtn">立即同步</button>
+                    <button class="pill-btn" id="disconnectBtn">断开</button>
+                </div>
+                <div class="settings-hint">在 GitHub → Settings → Developer settings 生成一个仅含 <strong>Gist</strong> 权限的 Token，填入即可在 Mac / iPhone 间同步。Token 只保存在本机。</div>
+            </div>
+
+            <div class="settings-actions">
+                <button class="cancel-btn settings-cancel" id="settingsCancel">取消</button>
+                <button class="edit-btn settings-save" id="settingsSave">保存</button>
+            </div>
+        </div>
+    </div>
 
     <div class="selection-bar" id="selectionBar">
         <button class="selection-tool-btn select-all-btn" id="selectAllBtn">全选</button>
@@ -701,13 +1389,43 @@
 
     <div class="toast" id="toast"></div>
 
-    <script>
-        // 数据存储
-        const STORAGE_KEY = 'daily_notes';
-        
-        // 当前日期
-        let currentDate = new Date();
+    <div class="cal-overlay" id="calOverlay">
+        <div class="cal-sheet">
+            <div class="cal-head">
+                <div class="cal-month" id="calMonth"></div>
+                <div class="cal-nav">
+                    <button id="calPrev" aria-label="上个月">‹</button>
+                    <button id="calNext" aria-label="下个月">›</button>
+                </div>
+            </div>
+            <div class="cal-weekdays">
+                <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+            </div>
+            <div class="cal-grid" id="calGrid"></div>
+            <div class="cal-stats">
+                <div class="cal-stat"><div class="num" id="statDays">0</div><div class="lbl">本月有记录</div></div>
+                <div class="cal-stat"><div class="num" id="statNotes">0</div><div class="lbl">本月总条数</div></div>
+                <div class="cal-stat"><div class="num" id="statAvg">0</div><div class="lbl">日均条数</div></div>
+            </div>
+            <button class="cal-today-btn" id="calTodayBtn">回到今天</button>
+        </div>
+    </div>
 
+    <script>
+        // ===== 存储键 =====
+        const STORAGE_KEY = 'daily_notes';
+        const TOMBSTONE_KEY = 'daily_notes_tombstones';
+        const OBSIDIAN_VAULT_KEY = 'obsidian_vault';
+        const OBSIDIAN_PATH_KEY = 'obsidian_path';
+        const GIST_TOKEN_KEY = 'gist_token';
+        const GIST_ID_KEY = 'gist_id';
+        const SYNC_LAST_KEY = 'sync_last';
+        const DEFAULT_OBSIDIAN_VAULT = 'kalamis-vault';
+        const DEFAULT_OBSIDIAN_PATH = 'Daily notes/{date}';
+        const GIST_FILENAME = 'daily-notes.json';
+        const TOMBSTONE_TTL = 90 * 24 * 60 * 60 * 1000; // 90 天后清理墓碑
+
+        let currentDate = new Date();
         let isSelectionMode = false;
         let selectedNoteIds = new Set();
         let undoMergeState = null;
@@ -715,185 +1433,489 @@
         let toastTimer = null;
         let longPressTimer = null;
         let longPressTriggered = false;
-        
-        // 获取数据
+        let syncing = false;
+        let pendingSync = false;
+        let syncTimer = null;
+
+        // ===== 数据读写 =====
         function getData() {
             const data = localStorage.getItem(STORAGE_KEY);
             return data ? JSON.parse(data) : {};
         }
-        
-        // 保存数据
+
         function saveData(data) {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         }
 
-        function getCurrentDateKey() {
-            return formatDate(currentDate);
+        function getTombstones() {
+            const t = localStorage.getItem(TOMBSTONE_KEY);
+            return t ? JSON.parse(t) : {};
         }
 
-        function getCurrentNotes() {
+        function saveTombstones(t) {
+            localStorage.setItem(TOMBSTONE_KEY, JSON.stringify(t));
+        }
+
+        function addTombstone(id) {
+            const t = getTombstones();
+            t[id] = Date.now();
+            saveTombstones(t);
+        }
+
+        // 给旧数据补齐字段
+        function migrateData() {
             const data = getData();
-            return data[getCurrentDateKey()] || [];
+            let changed = false;
+            Object.keys(data).forEach(dateKey => {
+                if (!Array.isArray(data[dateKey])) { return; }
+                data[dateKey].forEach(note => {
+                    if (note.updatedAt === undefined) { note.updatedAt = note.timestamp || note.id || Date.now(); changed = true; }
+                    if (note.sent === undefined) { note.sent = false; changed = true; }
+                    if (note.sentAt === undefined) { note.sentAt = null; changed = true; }
+                });
+            });
+            if (changed) { saveData(data); }
         }
 
-        function sortNotesByTime(notes) {
-            return [...notes].sort((a, b) => {
-                const timeA = a.timestamp || a.id || 0;
-                const timeB = b.timestamp || b.id || 0;
-                return timeA - timeB;
-            });
-        }
-
-        function closeAllMenus() {
-            document.querySelectorAll('.menu-dropdown').forEach(menu => {
-                menu.classList.remove('active');
-            });
-        }
-        
-        // 格式化日期为 YYYY-MM-DD
+        // ===== 工具函数 =====
         function formatDate(date) {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         }
-        
-        // 格式化日期显示 (中文)
+
         function formatDateDisplay(date) {
-            const year = date.getFullYear();
             const month = date.getMonth() + 1;
             const day = date.getDate();
             const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-            const weekday = weekdays[date.getDay()];
-            return `${month}月${day}日 ${weekday}`;
+            return `${month}月${day}日 ${weekdays[date.getDay()]}`;
         }
-        
-        // 格式化时间为 HH:MM
+
         function formatTime(date) {
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            return `${hours}:${minutes}`;
+            return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
         }
-        
-        // 更新日期显示
-        function updateDateDisplay() {
-            const dateDisplay = document.getElementById('dateDisplay');
-            const today = new Date();
-            const isToday = formatDate(currentDate) === formatDate(today);
-            
-            if (isToday) {
-                dateDisplay.textContent = '今天';
-            } else {
-                dateDisplay.textContent = formatDateDisplay(currentDate);
+
+        function relativeTime(ts) {
+            if (!ts) { return ''; }
+            const diff = Date.now() - ts;
+            if (diff < 60000) { return '刚刚'; }
+            if (diff < 3600000) { return Math.floor(diff / 60000) + ' 分钟前'; }
+            if (diff < 86400000) { return Math.floor(diff / 3600000) + ' 小时前'; }
+            return Math.floor(diff / 86400000) + ' 天前';
+        }
+
+        function getCurrentDateKey() { return formatDate(currentDate); }
+        function getCurrentNotes() { return getData()[getCurrentDateKey()] || []; }
+
+        function sortNotesByTime(notes) {
+            return [...notes].sort((a, b) => (a.timestamp || a.id || 0) - (b.timestamp || b.id || 0));
+        }
+
+        function autoGrowTextarea(el) {
+            if (!el) { return; }
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function closeAllMenus() {
+            document.querySelectorAll('.menu-dropdown').forEach(menu => menu.classList.remove('active'));
+        }
+
+        // ===== Obsidian 发送 =====
+        function getObsidianConfig() {
+            return {
+                vault: (localStorage.getItem(OBSIDIAN_VAULT_KEY) || DEFAULT_OBSIDIAN_VAULT).trim(),
+                pathTemplate: (localStorage.getItem(OBSIDIAN_PATH_KEY) || DEFAULT_OBSIDIAN_PATH).trim()
+            };
+        }
+
+        // 追加到 Daily Note 用精简格式（日期已在文件名里）
+        function buildObsidianMarkdown(notes) {
+            return sortNotesByTime(notes).map(note => `**${note.time}**\n${note.content}`).join('\n\n');
+        }
+
+        // 复制 / 多选复制 用完整格式（带日期）
+        function buildMarkdown(notes, dateKey) {
+            return sortNotesByTime(notes).map(note => `**${dateKey} ${note.time}**\n${note.content}`).join('\n\n');
+        }
+
+        function pushToObsidian(notes) {
+            const cfg = getObsidianConfig();
+            if (!cfg.vault) {
+                showToast('请先设置 Vault 名称', '去设置', openSettings, 4000);
+                return false;
             }
-            
-            renderNotes();
+            const filePath = cfg.pathTemplate.replace(/\{date\}/g, getCurrentDateKey());
+            const body = '\n' + buildObsidianMarkdown(notes) + '\n';
+            const url = `obsidian://new?vault=${encodeURIComponent(cfg.vault)}`
+                + `&file=${encodeURIComponent(filePath)}`
+                + `&append=true`
+                + `&content=${encodeURIComponent(body)}`;
+            window.location.href = url;
+            return true;
         }
-        
-        // 显示提示
+
+        function markNotesSent(ids) {
+            const data = getData();
+            const dateKey = getCurrentDateKey();
+            const notes = data[dateKey] || [];
+            const idSet = new Set(ids);
+            const now = Date.now();
+            notes.forEach(note => {
+                if (idSet.has(note.id)) {
+                    note.sent = true;
+                    note.sentAt = now;
+                    note.updatedAt = now;
+                }
+            });
+            saveData(data);
+            renderNotes();
+            scheduleSync();
+        }
+
+        function sendUnsent() {
+            const notes = getCurrentNotes();
+            if (notes.length === 0) { showToast('这一天还没有记录'); return; }
+            const unsent = notes.filter(n => !n.sent);
+            if (unsent.length === 0) { showToast('已全部发送到 Obsidian'); return; }
+            if (pushToObsidian(unsent)) {
+                markNotesSent(unsent.map(n => n.id));
+                showToast(`正在发送 ${unsent.length} 条到 Obsidian…`);
+            }
+        }
+
+        function resendAll() {
+            closeBarMenu();
+            const notes = getCurrentNotes();
+            if (notes.length === 0) { showToast('这一天还没有记录'); return; }
+            if (!confirm(`全量重发会把当天全部 ${notes.length} 条再次追加到 Obsidian（已发送过的会重复一份），确定吗？`)) { return; }
+            if (pushToObsidian(notes)) {
+                markNotesSent(notes.map(n => n.id));
+                showToast(`正在重发 ${notes.length} 条到 Obsidian…`);
+            }
+        }
+
+        // ===== 同步状态 UI =====
+        function getSyncConfig() {
+            return {
+                token: (localStorage.getItem(GIST_TOKEN_KEY) || '').trim(),
+                gistId: (localStorage.getItem(GIST_ID_KEY) || '').trim()
+            };
+        }
+
+        function setSyncStatus(state) {
+            const btn = document.getElementById('syncBtn');
+            btn.classList.remove('s-ok', 's-syncing', 's-error', 's-off');
+            const cfg = getSyncConfig();
+            let title = '';
+            if (!cfg.token) { btn.classList.add('s-off'); title = '云同步未开启 · 点按设置'; }
+            else if (state === 'syncing') { btn.classList.add('s-syncing'); title = '正在同步…'; }
+            else if (state === 'error') { btn.classList.add('s-error'); title = '同步失败 · 点按重试'; }
+            else {
+                btn.classList.add('s-ok');
+                const last = Number(localStorage.getItem(SYNC_LAST_KEY) || 0);
+                title = '已同步' + (last ? ' · ' + relativeTime(last) : '');
+            }
+            btn.title = title;
+            updateSyncSettingsInfo(state);
+        }
+
+        function updateSyncSettingsInfo(state) {
+            const line = document.getElementById('syncStatusLine');
+            const text = document.getElementById('syncStatusText');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            if (!line) { return; }
+            const cfg = getSyncConfig();
+            line.classList.remove('ok', 'error', 'syncing');
+            if (!cfg.token) {
+                text.textContent = '未开启 — 填入 Token 后点「立即同步」';
+                if (disconnectBtn) { disconnectBtn.disabled = true; }
+            } else if (state === 'syncing' || syncing) {
+                line.classList.add('syncing');
+                text.textContent = '正在同步…';
+                if (disconnectBtn) { disconnectBtn.disabled = false; }
+            } else if (state === 'error') {
+                line.classList.add('error');
+                text.textContent = '上次同步失败，请检查 Token';
+                if (disconnectBtn) { disconnectBtn.disabled = false; }
+            } else {
+                line.classList.add('ok');
+                const last = Number(localStorage.getItem(SYNC_LAST_KEY) || 0);
+                text.textContent = '已连接' + (last ? ' · 上次同步 ' + relativeTime(last) : '');
+                if (disconnectBtn) { disconnectBtn.disabled = false; }
+            }
+        }
+
+        // ===== 合并（CRDT-lite：按 id 去重 + updatedAt 取新 + 墓碑删除）=====
+        function mergeRemote(remote) {
+            if (!remote || typeof remote !== 'object') { return; }
+            const localData = getData();
+            const localTomb = getTombstones();
+            const remoteData = remote.data && typeof remote.data === 'object' ? remote.data : {};
+            const remoteTomb = remote.tombstones && typeof remote.tombstones === 'object' ? remote.tombstones : {};
+
+            // 合并墓碑（取较新的删除时间）
+            const mergedTomb = { ...localTomb };
+            Object.keys(remoteTomb).forEach(id => {
+                mergedTomb[id] = Math.max(mergedTomb[id] || 0, remoteTomb[id] || 0);
+            });
+
+            // 合并每天的记录
+            const allDates = new Set([...Object.keys(localData), ...Object.keys(remoteData)]);
+            const mergedData = {};
+            allDates.forEach(dateKey => {
+                const map = new Map();
+                const ingest = (notes) => {
+                    if (!Array.isArray(notes)) { return; }
+                    notes.forEach(note => {
+                        if (!note || note.id === undefined) { return; }
+                        const id = note.id;
+                        const normalized = {
+                            id: id,
+                            content: note.content || '',
+                            time: note.time || '00:00',
+                            timestamp: note.timestamp || id,
+                            updatedAt: note.updatedAt || note.timestamp || id,
+                            sent: !!note.sent,
+                            sentAt: note.sentAt || null
+                        };
+                        const existing = map.get(id);
+                        if (!existing || normalized.updatedAt >= existing.updatedAt) {
+                            map.set(id, normalized);
+                        }
+                    });
+                };
+                ingest(localData[dateKey]);
+                ingest(remoteData[dateKey]);
+
+                // 应用墓碑
+                const kept = [];
+                map.forEach(note => {
+                    const deletedAt = mergedTomb[note.id];
+                    if (deletedAt && deletedAt >= note.updatedAt) { return; }
+                    kept.push(note);
+                });
+                if (kept.length > 0) {
+                    kept.sort((a, b) => (b.timestamp || b.id || 0) - (a.timestamp || a.id || 0));
+                    mergedData[dateKey] = kept;
+                }
+            });
+
+            // 清理过期墓碑
+            const now = Date.now();
+            Object.keys(mergedTomb).forEach(id => {
+                if (now - mergedTomb[id] > TOMBSTONE_TTL) { delete mergedTomb[id]; }
+            });
+
+            saveData(mergedData);
+            saveTombstones(mergedTomb);
+        }
+
+        function currentPayload() {
+            return { v: 1, data: getData(), tombstones: getTombstones(), updatedAt: Date.now() };
+        }
+
+        // ===== GitHub Gist 网络 =====
+        async function gistGet(gistId, token) {
+            const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
+            });
+            if (res.status === 404) { return null; }
+            if (res.status === 401) { throw new Error('Token 无效'); }
+            if (!res.ok) { throw new Error('HTTP ' + res.status); }
+            const gist = await res.json();
+            const file = gist.files && gist.files[GIST_FILENAME];
+            if (!file) { return null; }
+            try { return JSON.parse(file.content); } catch (e) { return null; }
+        }
+
+        async function gistCreate(payload, token) {
+            const res = await fetch('https://api.github.com/gists', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    description: '日记工具同步数据',
+                    public: false,
+                    files: { [GIST_FILENAME]: { content: JSON.stringify(payload) } }
+                })
+            });
+            if (!res.ok) { throw new Error('创建失败 HTTP ' + res.status); }
+            const gist = await res.json();
+            return gist.id;
+        }
+
+        async function gistPatch(gistId, payload, token) {
+            const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ files: { [GIST_FILENAME]: { content: JSON.stringify(payload) } } })
+            });
+            if (!res.ok) { throw new Error('上传失败 HTTP ' + res.status); }
+        }
+
+        async function syncNow(silent) {
+            const cfg = getSyncConfig();
+            if (!cfg.token) {
+                if (!silent) { showToast('请先填入 GitHub Token', '去设置', openSettings, 4000); }
+                return;
+            }
+            if (syncing) { pendingSync = true; return; }
+            syncing = true;
+            setSyncStatus('syncing');
+            try {
+                let gistId = cfg.gistId;
+                if (gistId) {
+                    const remote = await gistGet(gistId, cfg.token);
+                    if (remote) { mergeRemote(remote); }
+                }
+                const payload = currentPayload();
+                if (!gistId) {
+                    gistId = await gistCreate(payload, cfg.token);
+                    localStorage.setItem(GIST_ID_KEY, gistId);
+                    const gistInput = document.getElementById('gistInput');
+                    if (gistInput) { gistInput.value = gistId; }
+                } else {
+                    await gistPatch(gistId, payload, cfg.token);
+                }
+                localStorage.setItem(SYNC_LAST_KEY, String(Date.now()));
+                setSyncStatus('ok');
+                renderNotes();
+                if (!silent) { showToast('已同步'); }
+            } catch (e) {
+                setSyncStatus('error');
+                if (!silent) { showToast('同步失败：' + (e.message || '网络错误'), '重试', () => syncNow(false), 5000); }
+            } finally {
+                syncing = false;
+                if (pendingSync) { pendingSync = false; scheduleSync(); }
+            }
+        }
+
+        function scheduleSync() {
+            if (!getSyncConfig().token) { return; }
+            if (syncTimer) { clearTimeout(syncTimer); }
+            syncTimer = setTimeout(() => syncNow(true), 1500);
+        }
+
+        // ===== Toast =====
         function showToast(message, actionLabel, actionHandler, duration = 2000) {
             const toast = document.getElementById('toast');
             toast.innerHTML = '';
             toast.appendChild(document.createTextNode(message));
-
             if (actionLabel && actionHandler) {
-                const actionButton = document.createElement('button');
-                actionButton.type = 'button';
-                actionButton.textContent = actionLabel;
-                actionButton.addEventListener('click', () => {
-                    actionHandler();
-                    toast.classList.remove('show');
-                });
-                toast.appendChild(actionButton);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = actionLabel;
+                btn.addEventListener('click', () => { actionHandler(); toast.classList.remove('show'); });
+                toast.appendChild(btn);
             }
-
-            if (toastTimer) {
-                clearTimeout(toastTimer);
-            }
-
+            if (toastTimer) { clearTimeout(toastTimer); }
             toast.classList.add('show');
-            
-            toastTimer = setTimeout(() => {
-                toast.classList.remove('show');
-            }, duration);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
         }
-        
-        // 保存笔记
+
+        // ===== 设置面板 =====
+        function openSettings() {
+            const cfg = getObsidianConfig();
+            const sync = getSyncConfig();
+            document.getElementById('vaultInput').value = cfg.vault;
+            document.getElementById('pathInput').value = cfg.pathTemplate;
+            document.getElementById('tokenInput').value = sync.token;
+            document.getElementById('gistInput').value = sync.gistId;
+            updateSyncSettingsInfo();
+            document.getElementById('settingsOverlay').classList.add('show');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsOverlay').classList.remove('show');
+        }
+
+        function saveSettings() {
+            const vault = document.getElementById('vaultInput').value.trim();
+            const pathTemplate = document.getElementById('pathInput').value.trim();
+            const token = document.getElementById('tokenInput').value.trim();
+            const gistId = document.getElementById('gistInput').value.trim();
+            if (vault) { localStorage.setItem(OBSIDIAN_VAULT_KEY, vault); }
+            if (pathTemplate) { localStorage.setItem(OBSIDIAN_PATH_KEY, pathTemplate); }
+            localStorage.setItem(GIST_TOKEN_KEY, token);
+            localStorage.setItem(GIST_ID_KEY, gistId);
+            closeSettings();
+            setSyncStatus('ok');
+            showToast('设置已保存');
+            if (token) { scheduleSync(); }
+        }
+
+        function disconnectSync() {
+            if (!confirm('断开后将不再同步（本机记录保留），确定吗？')) { return; }
+            localStorage.removeItem(GIST_TOKEN_KEY);
+            localStorage.removeItem(GIST_ID_KEY);
+            localStorage.removeItem(SYNC_LAST_KEY);
+            document.getElementById('tokenInput').value = '';
+            document.getElementById('gistInput').value = '';
+            setSyncStatus('off');
+            showToast('已断开同步');
+        }
+
+        // ===== 记录增删改 =====
         function saveNote() {
             const input = document.getElementById('noteInput');
             const content = input.value.trim();
-            
-            if (!content) {
-                return;
-            }
-            
+            if (!content) { return; }
             const data = getData();
             const dateKey = formatDate(currentDate);
-            
-            if (!data[dateKey]) {
-                data[dateKey] = [];
-            }
-            
-            const note = {
-                id: Date.now(),
-                content: content,
-                time: formatTime(new Date()),
-                timestamp: Date.now()
-            };
-            
-            data[dateKey].unshift(note);
+            if (!data[dateKey]) { data[dateKey] = []; }
+            const now = Date.now();
+            data[dateKey].unshift({ id: now, content: content, time: formatTime(new Date()), timestamp: now, updatedAt: now, sent: false, sentAt: null });
             saveData(data);
-            
             input.value = '';
+            autoGrowTextarea(input);
             renderNotes();
             showToast('已保存');
+            scheduleSync();
         }
-        
-        // 删除笔记
+
         function deleteNote(id) {
             const data = getData();
             const dateKey = formatDate(currentDate);
-            
             if (data[dateKey]) {
                 data[dateKey] = data[dateKey].filter(note => note.id !== id);
-                if (data[dateKey].length === 0) {
-                    delete data[dateKey];
-                }
+                if (data[dateKey].length === 0) { delete data[dateKey]; }
                 saveData(data);
+                addTombstone(id);
                 renderNotes();
                 showToast('已删除');
+                scheduleSync();
             }
         }
-        
-        // 编辑笔记
+
         function editNote(id, newContent) {
             const data = getData();
             const dateKey = formatDate(currentDate);
-            
             if (data[dateKey]) {
                 const note = data[dateKey].find(n => n.id === id);
                 if (note) {
                     note.content = newContent;
+                    note.updatedAt = Date.now();
                     saveData(data);
                     renderNotes();
                     showToast('已更新');
+                    scheduleSync();
                 }
             }
         }
 
+        // ===== 选择模式 =====
         function setSelectionMode(active, keepSelection = false) {
-            if (active && document.querySelector('.edit-field.active')) {
-                showToast('请先完成编辑');
-                return;
-            }
-
+            if (active && document.querySelector('.edit-field.active')) { showToast('请先完成编辑'); return; }
             isSelectionMode = active;
             document.body.classList.toggle('selection-mode', isSelectionMode);
-
-            if (!keepSelection) {
-                selectedNoteIds.clear();
-            }
-
+            if (!keepSelection) { selectedNoteIds.clear(); }
             closeAllMenus();
             renderNotes();
         }
@@ -902,13 +1924,11 @@
             const currentNotes = notes || getCurrentNotes();
             const availableIds = new Set(currentNotes.map(note => note.id));
             selectedNoteIds = new Set([...selectedNoteIds].filter(id => availableIds.has(id)));
-
             if (currentNotes.length === 0 && isSelectionMode) {
                 isSelectionMode = false;
                 selectedNoteIds.clear();
                 document.body.classList.remove('selection-mode');
             }
-
             const selectBtn = document.getElementById('selectBtn');
             const selectionStatus = document.getElementById('selectionStatus');
             const selectAllBtn = document.getElementById('selectAllBtn');
@@ -916,12 +1936,10 @@
             const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
             const mergeBtn = document.getElementById('mergeBtn');
             const selectedCount = selectedNoteIds.size;
-
             selectBtn.style.display = currentNotes.length === 0 && !isSelectionMode ? 'none' : '';
             selectBtn.textContent = isSelectionMode ? '取消' : '选择';
             selectBtn.classList.toggle('is-cancel', isSelectionMode);
             selectionStatus.textContent = `已选 ${selectedCount} 条`;
-
             selectAllBtn.textContent = selectedCount === currentNotes.length && currentNotes.length > 0 ? '清空' : '全选';
             copySelectedBtn.disabled = selectedCount === 0;
             deleteSelectedBtn.disabled = selectedCount === 0;
@@ -929,41 +1947,20 @@
         }
 
         function toggleNoteSelection(event, id) {
-            if (event) {
-                event.stopPropagation();
-            }
-
-            if (!isSelectionMode) {
-                setSelectionMode(true);
-            }
-
-            if (selectedNoteIds.has(id)) {
-                selectedNoteIds.delete(id);
-            } else {
-                selectedNoteIds.add(id);
-            }
-
+            if (event) { event.stopPropagation(); }
+            if (!isSelectionMode) { setSelectionMode(true); }
+            if (selectedNoteIds.has(id)) { selectedNoteIds.delete(id); } else { selectedNoteIds.add(id); }
             renderNotes();
         }
 
         function handleNoteCardClick(event, id) {
-            if (longPressTriggered) {
-                longPressTriggered = false;
-                return;
-            }
-
-            if (!isSelectionMode || event.target.closest('.note-menu') || event.target.closest('.edit-field') || event.target.closest('.edit-actions')) {
-                return;
-            }
-
+            if (longPressTriggered) { longPressTriggered = false; return; }
+            if (!isSelectionMode || event.target.closest('.note-menu') || event.target.closest('.edit-field') || event.target.closest('.edit-actions')) { return; }
             toggleNoteSelection(event, id);
         }
 
         function startLongPress(event, id) {
-            if (isSelectionMode || document.querySelector('.edit-field.active') || event.pointerType === 'mouse' || event.target.closest('.note-menu') || event.target.closest('.edit-field') || event.target.closest('.edit-actions')) {
-                return;
-            }
-
+            if (isSelectionMode || document.querySelector('.edit-field.active') || event.pointerType === 'mouse' || event.target.closest('.note-menu') || event.target.closest('.edit-field') || event.target.closest('.edit-actions')) { return; }
             longPressTriggered = false;
             longPressTimer = setTimeout(() => {
                 longPressTriggered = true;
@@ -975,71 +1972,43 @@
         }
 
         function cancelLongPress() {
-            if (longPressTimer) {
-                clearTimeout(longPressTimer);
-                longPressTimer = null;
-            }
+            if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
         }
 
         function toggleSelectAll() {
             const notes = getCurrentNotes();
-            if (!isSelectionMode || notes.length === 0) {
-                return;
-            }
-
-            if (selectedNoteIds.size === notes.length) {
-                selectedNoteIds.clear();
-            } else {
-                selectedNoteIds = new Set(notes.map(note => note.id));
-            }
-
+            if (!isSelectionMode || notes.length === 0) { return; }
+            if (selectedNoteIds.size === notes.length) { selectedNoteIds.clear(); }
+            else { selectedNoteIds = new Set(notes.map(note => note.id)); }
             renderNotes();
         }
 
         function getSelectedNotes() {
-            const notes = getCurrentNotes().filter(note => selectedNoteIds.has(note.id));
-            return sortNotesByTime(notes);
-        }
-
-        function buildMarkdown(notes, dateKey) {
-            return sortNotesByTime(notes).map(note =>
-                `**${dateKey} ${note.time}**\n${note.content}`
-            ).join('\n\n');
+            return sortNotesByTime(getCurrentNotes().filter(note => selectedNoteIds.has(note.id)));
         }
 
         function restoreNotesSnapshot(state) {
-            if (!state) {
-                return;
-            }
-
+            if (!state) { return; }
             const data = getData();
             const currentNotes = data[state.dateKey] || [];
             const originalIds = new Set(state.beforeNotes.map(note => note.id));
             const removeIds = new Set(state.removeIds || []);
-            const notesAddedAfterAction = currentNotes.filter(note => {
-                return !originalIds.has(note.id) && !removeIds.has(note.id);
-            });
-
-            data[state.dateKey] = [...notesAddedAfterAction, ...state.beforeNotes].sort((a, b) => {
-                const timeA = a.timestamp || a.id || 0;
-                const timeB = b.timestamp || b.id || 0;
-                return timeB - timeA;
-            });
-
+            const notesAddedAfterAction = currentNotes.filter(note => !originalIds.has(note.id) && !removeIds.has(note.id));
+            data[state.dateKey] = [...notesAddedAfterAction, ...state.beforeNotes].sort((a, b) => (b.timestamp || b.id || 0) - (a.timestamp || a.id || 0));
             saveData(data);
-
-            if (getCurrentDateKey() === state.dateKey) {
-                renderNotes();
-            }
+            // 撤销时移除相关墓碑
+            const tomb = getTombstones();
+            state.beforeNotes.forEach(note => { delete tomb[note.id]; });
+            saveTombstones(tomb);
+            if (getCurrentDateKey() === state.dateKey) { renderNotes(); }
+            scheduleSync();
         }
-        
-        // 渲染笔记列表
+
+        // ===== 渲染 =====
         function renderNotes() {
             const notesList = document.getElementById('notesList');
-            const data = getData();
-            const dateKey = getCurrentDateKey();
-            const notes = data[dateKey] || [];
-            
+            const notes = getData()[getCurrentDateKey()] || [];
+
             if (notes.length === 0) {
                 notesList.innerHTML = `
                     <div class="empty-state">
@@ -1047,19 +2016,27 @@
                             <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                         </svg>
                         <p>还没有记录</p>
-                    </div>
-                `;
+                    </div>`;
                 updateSelectionControls(notes);
+                updateActionBar(notes);
+                updateDaySummary(notes);
                 return;
             }
-            
-            notesList.innerHTML = notes.map(note => `
+
+            notesList.innerHTML = notes.map(note => {
+                const pill = note.sent
+                    ? `<span class="status-pill sent"><span class="pdot"></span>已发送</span>`
+                    : `<span class="status-pill unsent"><span class="pdot"></span>未发送</span>`;
+                return `
                 <div class="note-card ${selectedNoteIds.has(note.id) ? 'selected' : ''}" data-id="${note.id}" onclick="handleNoteCardClick(event, ${note.id})" onpointerdown="startLongPress(event, ${note.id})" onpointerup="cancelLongPress()" onpointerleave="cancelLongPress()" onpointercancel="cancelLongPress()">
                     <button class="select-control" aria-label="${selectedNoteIds.has(note.id) ? '取消选择' : '选择记录'}" onclick="toggleNoteSelection(event, ${note.id})">
                         <span class="select-dot">${selectedNoteIds.has(note.id) ? '✓' : ''}</span>
                     </button>
                     <div class="note-header">
-                        <div class="note-time">${note.time}</div>
+                        <div class="note-meta">
+                            <span class="note-time">${note.time}</span>
+                            ${pill}
+                        </div>
                         <div class="note-menu">
                             <button class="menu-btn" onclick="toggleMenu(${note.id})">⋯</button>
                             <div class="menu-dropdown" id="menu-${note.id}">
@@ -1074,100 +2051,95 @@
                         <button class="cancel-btn" onclick="cancelEdit(${note.id})">取消</button>
                         <button class="edit-btn" onclick="saveEdit(${note.id})">保存</button>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
 
             updateSelectionControls(notes);
+            updateActionBar(notes);
+            updateDaySummary(notes);
         }
-        
-        // 转义HTML
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+
+        function updateDaySummary(notes) {
+            const el = document.getElementById('daySummary');
+            const list = notes || getCurrentNotes();
+            if (list.length === 0) { el.classList.add('empty'); el.innerHTML = ''; return; }
+            el.classList.remove('empty');
+            const unsent = list.filter(n => !n.sent).length;
+            const tail = unsent > 0 ? ` · <span class="pending">${unsent} 条待发送</span>` : ' · 已全部同步到 Obsidian';
+            el.innerHTML = `<span class="count">${list.length} 条记录</span>${tail}`;
         }
-        
-        // 切换菜单
-        function toggleMenu(id) {
-            // 关闭所有其他菜单
-            document.querySelectorAll('.menu-dropdown').forEach(menu => {
-                if (menu.id !== `menu-${id}`) {
-                    menu.classList.remove('active');
-                }
-            });
-            
-            const menu = document.getElementById(`menu-${id}`);
-            menu.classList.toggle('active');
-        }
-        
-        // 点击外部关闭菜单
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.note-menu')) {
-                document.querySelectorAll('.menu-dropdown').forEach(menu => {
-                    menu.classList.remove('active');
-                });
+
+        function updateActionBar(notes) {
+            const list = notes || getCurrentNotes();
+            const bar = document.getElementById('actionBar');
+            const sendBtn = document.getElementById('sendUnsentBtn');
+            const label = document.getElementById('sendLabel');
+            const resendCount = document.getElementById('resendCount');
+            bar.classList.toggle('hidden', list.length === 0);
+            resendCount.textContent = list.length + ' 条';
+            const unsent = list.filter(n => !n.sent).length;
+            if (unsent === 0) {
+                sendBtn.classList.add('all-synced');
+                sendBtn.disabled = true;
+                label.textContent = '已全部发送';
+            } else {
+                sendBtn.classList.remove('all-synced');
+                sendBtn.disabled = false;
+                label.textContent = `发送 ${unsent} 条到 Obsidian`;
             }
+        }
+
+        function toggleMenu(id) {
+            document.querySelectorAll('.menu-dropdown').forEach(menu => { if (menu.id !== `menu-${id}`) { menu.classList.remove('active'); } });
+            document.getElementById(`menu-${id}`).classList.toggle('active');
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.note-menu')) { closeAllMenus(); }
+            if (!e.target.closest('#barMenu') && !e.target.closest('#moreBtn')) { closeBarMenu(); }
         });
-        
-        // 开始编辑
+
         function startEdit(id) {
             const content = document.getElementById(`content-${id}`);
             const editField = document.getElementById(`edit-${id}`);
             const actions = document.getElementById(`actions-${id}`);
             const menu = document.getElementById(`menu-${id}`);
-            
             content.classList.add('editing');
             editField.classList.add('active');
             actions.classList.add('active');
             menu.classList.remove('active');
-            
+            editField.oninput = () => autoGrowTextarea(editField);
+            autoGrowTextarea(editField);
             editField.focus();
             editField.setSelectionRange(editField.value.length, editField.value.length);
         }
-        
-        // 取消编辑
+
         function cancelEdit(id) {
             const content = document.getElementById(`content-${id}`);
             const editField = document.getElementById(`edit-${id}`);
             const actions = document.getElementById(`actions-${id}`);
-            
             content.classList.remove('editing');
             editField.classList.remove('active');
             actions.classList.remove('active');
-            
-            // 恢复原内容
-            const data = getData();
-            const dateKey = formatDate(currentDate);
-            const note = data[dateKey]?.find(n => n.id === id);
-            if (note) {
-                editField.value = note.content;
-            }
-        }
-        
-        // 保存编辑
-        function saveEdit(id) {
-            const editField = document.getElementById(`edit-${id}`);
-            const newContent = editField.value.trim();
-            
-            if (!newContent) {
-                return;
-            }
-            
-            editNote(id, newContent);
-        }
-        
-        // 确认删除
-        function confirmDelete(id) {
-            if (confirm('确定要删除这条记录吗?')) {
-                deleteNote(id);
-            }
+            const note = (getData()[formatDate(currentDate)] || []).find(n => n.id === id);
+            if (note) { editField.value = note.content; }
         }
 
+        function saveEdit(id) {
+            const newContent = document.getElementById(`edit-${id}`).value.trim();
+            if (!newContent) { return; }
+            editNote(id, newContent);
+        }
+
+        function confirmDelete(id) {
+            if (confirm('确定要删除这条记录吗?')) { deleteNote(id); }
+        }
+
+        // ===== 复制 =====
         function fallbackCopyText(text) {
             const textarea = document.createElement('textarea');
             const selection = document.getSelection();
             const selectedRange = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-
             textarea.value = text;
             textarea.setAttribute('readonly', '');
             textarea.style.position = 'fixed';
@@ -1175,60 +2147,47 @@
             textarea.style.left = '0';
             textarea.style.width = '1px';
             textarea.style.height = '1px';
-            textarea.style.padding = '0';
-            textarea.style.border = '0';
             textarea.style.opacity = '0';
-
             document.body.appendChild(textarea);
             textarea.focus();
             textarea.select();
             textarea.setSelectionRange(0, textarea.value.length);
-
             let didCopy = false;
-            try {
-                didCopy = document.execCommand('copy');
-            } catch (error) {
-                didCopy = false;
-            }
-
+            try { didCopy = document.execCommand('copy'); } catch (error) { didCopy = false; }
             document.body.removeChild(textarea);
-
-            if (selection && selectedRange) {
-                selection.removeAllRanges();
-                selection.addRange(selectedRange);
-            }
-
+            if (selection && selectedRange) { selection.removeAllRanges(); selection.addRange(selectedRange); }
             return didCopy;
         }
 
         function copyTextToClipboard(text) {
-            if (fallbackCopyText(text)) {
-                return Promise.resolve();
-            }
-
-            if (navigator.clipboard && window.isSecureContext) {
-                return navigator.clipboard.writeText(text);
-            }
-
+            if (navigator.clipboard && window.isSecureContext) { return navigator.clipboard.writeText(text); }
+            if (fallbackCopyText(text)) { return Promise.resolve(); }
             return Promise.reject(new Error('Clipboard is unavailable'));
         }
 
+        function copyTodayNotes() {
+            closeBarMenu();
+            const notes = getCurrentNotes();
+            if (notes.length === 0) { showToast('今天还没有记录'); return; }
+            copyTextToClipboard(buildMarkdown(notes, getCurrentDateKey())).then(() => {
+                showToast(`已复制 ${notes.length} 条记录`);
+            }).catch(() => showToast('复制失败'));
+        }
+
+        function copySelectedNotes() {
+            const selectedNotes = getSelectedNotes();
+            if (selectedNotes.length === 0) { showToast('请先选择记录'); return; }
+            copyTextToClipboard(buildMarkdown(selectedNotes, getCurrentDateKey())).then(() => {
+                showToast(`已复制 ${selectedNotes.length} 条记录`);
+            }).catch(() => showToast('复制失败'));
+        }
+
+        // ===== 导出/导入 =====
         function exportNotesBackup() {
             const data = getData();
-            const totalCount = Object.values(data).reduce((total, notes) => {
-                return total + (Array.isArray(notes) ? notes.length : 0);
-            }, 0);
-
-            if (totalCount === 0) {
-                showToast('暂无记录可导出');
-                return;
-            }
-
-            const backup = {
-                version: 1,
-                exportedAt: new Date().toISOString(),
-                data: data
-            };
+            const totalCount = Object.values(data).reduce((t, notes) => t + (Array.isArray(notes) ? notes.length : 0), 0);
+            if (totalCount === 0) { showToast('暂无记录可导出'); return; }
+            const backup = { version: 1, exportedAt: new Date().toISOString(), data: data, tombstones: getTombstones() };
             const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -1245,139 +2204,82 @@
             const importedData = payload && payload.data ? payload.data : payload;
             const normalized = {};
             let generatedId = Date.now();
-
-            if (!importedData || typeof importedData !== 'object' || Array.isArray(importedData)) {
-                return normalized;
-            }
-
+            if (!importedData || typeof importedData !== 'object' || Array.isArray(importedData)) { return normalized; }
             Object.entries(importedData).forEach(([dateKey, notes]) => {
-                if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey) || !Array.isArray(notes)) {
-                    return;
-                }
-
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey) || !Array.isArray(notes)) { return; }
                 const normalizedNotes = notes
                     .filter(note => note && typeof note.content === 'string' && note.content.trim())
                     .map(note => {
                         const fallbackId = generatedId++;
                         const timestamp = Number(note.timestamp || note.id || fallbackId);
+                        const id = Number(note.id || fallbackId);
                         return {
-                            id: Number(note.id || fallbackId),
+                            id: id,
                             content: note.content,
                             time: typeof note.time === 'string' && note.time ? note.time : '00:00',
-                            timestamp: Number.isFinite(timestamp) ? timestamp : fallbackId
+                            timestamp: Number.isFinite(timestamp) ? timestamp : fallbackId,
+                            updatedAt: Number(note.updatedAt) || (Number.isFinite(timestamp) ? timestamp : fallbackId),
+                            sent: !!note.sent,
+                            sentAt: note.sentAt || null
                         };
                     });
-
-                if (normalizedNotes.length > 0) {
-                    normalized[dateKey] = normalizedNotes;
-                }
+                if (normalizedNotes.length > 0) { normalized[dateKey] = normalizedNotes; }
             });
-
             return normalized;
         }
 
         function importNotesBackup(file) {
-            if (!file) {
-                return;
-            }
-
+            if (!file) { return; }
             const reader = new FileReader();
-
             reader.onload = () => {
                 try {
                     const imported = normalizeImportedData(JSON.parse(reader.result));
                     const data = getData();
                     let importedCount = 0;
-
                     Object.entries(imported).forEach(([dateKey, notes]) => {
                         const existingNotes = data[dateKey] || [];
                         const existingIds = new Set(existingNotes.map(note => note.id));
                         const newNotes = notes.filter(note => !existingIds.has(note.id));
-
                         if (newNotes.length > 0) {
-                            data[dateKey] = [...newNotes, ...existingNotes].sort((a, b) => {
-                                const timeA = a.timestamp || a.id || 0;
-                                const timeB = b.timestamp || b.id || 0;
-                                return timeB - timeA;
-                            });
+                            data[dateKey] = [...newNotes, ...existingNotes].sort((a, b) => (b.timestamp || b.id || 0) - (a.timestamp || a.id || 0));
                             importedCount += newNotes.length;
                         }
                     });
-
-                    if (importedCount === 0) {
-                        showToast('没有可导入的新记录');
-                        return;
-                    }
-
+                    if (importedCount === 0) { showToast('没有可导入的新记录'); return; }
                     saveData(data);
                     renderNotes();
                     showToast(`已导入 ${importedCount} 条记录`);
-                } catch (error) {
-                    showToast('导入失败');
-                }
+                    scheduleSync();
+                } catch (error) { showToast('导入失败'); }
             };
-
-            reader.onerror = () => {
-                showToast('导入失败');
-            };
-
+            reader.onerror = () => showToast('导入失败');
             reader.readAsText(file);
         }
 
-        function copySelectedNotes() {
-            const selectedNotes = getSelectedNotes();
-            const dateKey = getCurrentDateKey();
-
-            if (selectedNotes.length === 0) {
-                showToast('请先选择记录');
-                return;
-            }
-
-            copyTextToClipboard(buildMarkdown(selectedNotes, dateKey)).then(() => {
-                showToast(`已复制 ${selectedNotes.length} 条记录`);
-            }).catch(() => {
-                showToast('复制失败');
-            });
-        }
-
+        // ===== 删除/合并多选 =====
         function deleteSelectedNotes() {
             const selectedNotes = getSelectedNotes();
             const dateKey = getCurrentDateKey();
-
-            if (selectedNotes.length === 0) {
-                showToast('请先选择记录');
-                return;
-            }
-
-            if (!confirm(`确定要删除选中的 ${selectedNotes.length} 条记录吗?`)) {
-                return;
-            }
-
+            if (selectedNotes.length === 0) { showToast('请先选择记录'); return; }
+            if (!confirm(`确定要删除选中的 ${selectedNotes.length} 条记录吗?`)) { return; }
             const data = getData();
             const notes = data[dateKey] || [];
             const selectedIds = new Set(selectedNotes.map(note => note.id));
-
-            undoDeleteState = {
-                dateKey: dateKey,
-                beforeNotes: notes.map(note => ({ ...note }))
-            };
-
+            undoDeleteState = { dateKey: dateKey, beforeNotes: notes.map(note => ({ ...note })) };
             data[dateKey] = notes.filter(note => !selectedIds.has(note.id));
-
-            if (data[dateKey].length === 0) {
-                delete data[dateKey];
-            }
-
+            if (data[dateKey].length === 0) { delete data[dateKey]; }
             saveData(data);
+            const tomb = getTombstones();
+            const now = Date.now();
+            selectedIds.forEach(id => { tomb[id] = now; });
+            saveTombstones(tomb);
             setSelectionMode(false);
             showToast(`已删除 ${selectedNotes.length} 条记录`, '撤销', undoDelete, 5000);
+            scheduleSync();
         }
 
         function undoDelete() {
-            if (!undoDeleteState) {
-                return;
-            }
-
+            if (!undoDeleteState) { return; }
             restoreNotesSnapshot(undoDeleteState);
             undoDeleteState = null;
             showToast('已撤销删除');
@@ -1386,146 +2288,205 @@
         function mergeSelectedNotes() {
             const selectedNotes = getSelectedNotes();
             const dateKey = getCurrentDateKey();
-
-            if (selectedNotes.length < 2) {
-                showToast('至少选择 2 条才能合并');
-                return;
-            }
-
+            if (selectedNotes.length < 2) { showToast('至少选择 2 条才能合并'); return; }
             const data = getData();
             const notes = data[dateKey] || [];
             const selectedIds = new Set(selectedNotes.map(note => note.id));
             const firstNote = selectedNotes[0];
-            const mergedTimestamp = firstNote.timestamp || firstNote.id || Date.now();
+            const now = Date.now();
             const mergedNote = {
-                id: Date.now(),
+                id: now,
                 content: selectedNotes.map(note => note.content).join('\n\n'),
                 time: firstNote.time,
-                timestamp: mergedTimestamp
+                timestamp: firstNote.timestamp || firstNote.id || now,
+                updatedAt: now,
+                sent: false,
+                sentAt: null
             };
-
-            undoMergeState = {
-                dateKey: dateKey,
-                beforeNotes: notes.map(note => ({ ...note })),
-                removeIds: [mergedNote.id]
-            };
-
-            data[dateKey] = [mergedNote, ...notes.filter(note => !selectedIds.has(note.id))].sort((a, b) => {
-                const timeA = a.timestamp || a.id || 0;
-                const timeB = b.timestamp || b.id || 0;
-                return timeB - timeA;
-            });
-
+            undoMergeState = { dateKey: dateKey, beforeNotes: notes.map(note => ({ ...note })), removeIds: [mergedNote.id] };
+            data[dateKey] = [mergedNote, ...notes.filter(note => !selectedIds.has(note.id))].sort((a, b) => (b.timestamp || b.id || 0) - (a.timestamp || a.id || 0));
             saveData(data);
+            const tomb = getTombstones();
+            selectedIds.forEach(id => { tomb[id] = now; });
+            saveTombstones(tomb);
             setSelectionMode(false);
             showToast(`已合并 ${selectedNotes.length} 条`, '撤销', undoMerge, 5000);
+            scheduleSync();
         }
 
         function undoMerge() {
-            if (!undoMergeState) {
-                return;
-            }
-
+            if (!undoMergeState) { return; }
             restoreNotesSnapshot(undoMergeState);
             undoMergeState = null;
             showToast('已撤销合并');
         }
-        
-        // 复制今日记录
-        function copyTodayNotes() {
-            const data = getData();
-            const dateKey = getCurrentDateKey();
-            const notes = data[dateKey] || [];
-            
-            if (notes.length === 0) {
-                showToast('今天还没有记录');
-                return;
-            }
-            
-            const sortedNotes = sortNotesByTime(notes);
-            const markdown = buildMarkdown(sortedNotes, dateKey);
-            
-            copyTextToClipboard(markdown).then(() => {
-                showToast(`已复制 ${sortedNotes.length} 条记录`);
-            }).catch(() => {
-                showToast('复制失败');
-            });
+
+        // ===== 底部菜单 =====
+        function toggleBarMenu() {
+            document.getElementById('barMenu').classList.toggle('show');
         }
-        
-        // 事件监听
+        function closeBarMenu() {
+            document.getElementById('barMenu').classList.remove('show');
+        }
+
+        // ===== 日期 =====
+        function updateDateDisplay() {
+            const dateDisplay = document.getElementById('dateDisplay');
+            const isToday = formatDate(currentDate) === formatDate(new Date());
+            const label = isToday ? '今天' : formatDateDisplay(currentDate);
+            dateDisplay.innerHTML = `${label}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
+            renderNotes();
+        }
+
+        // ===== 日历 =====
+        let calViewDate = new Date();
+
+        function countNotesForDate(data, dateKey) {
+            const notes = data[dateKey];
+            if (!Array.isArray(notes)) { return { total: 0, unsent: 0 }; }
+            return { total: notes.length, unsent: notes.filter(n => !n.sent).length };
+        }
+
+        function openCalendar() {
+            calViewDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            renderCalendar();
+            document.getElementById('calOverlay').classList.add('show');
+        }
+
+        function closeCalendar() {
+            document.getElementById('calOverlay').classList.remove('show');
+        }
+
+        function renderCalendar() {
+            const data = getData();
+            const year = calViewDate.getFullYear();
+            const month = calViewDate.getMonth();
+            document.getElementById('calMonth').textContent = `${year} 年 ${month + 1} 月`;
+
+            const firstDay = new Date(year, month, 1);
+            const startWeekday = firstDay.getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const prevMonthDays = new Date(year, month, 0).getDate();
+            const todayKey = formatDate(new Date());
+            const selectedKey = formatDate(currentDate);
+
+            const cells = [];
+            // 上月补格
+            for (let i = startWeekday - 1; i >= 0; i--) {
+                cells.push({ day: prevMonthDays - i, other: true, date: new Date(year, month - 1, prevMonthDays - i) });
+            }
+            // 本月
+            for (let d = 1; d <= daysInMonth; d++) {
+                cells.push({ day: d, other: false, date: new Date(year, month, d) });
+            }
+            // 下月补格到整行
+            while (cells.length % 7 !== 0) {
+                const d = cells.length - (startWeekday + daysInMonth) + 1;
+                cells.push({ day: d, other: true, date: new Date(year, month + 1, d) });
+            }
+
+            const grid = document.getElementById('calGrid');
+            grid.innerHTML = cells.map(c => {
+                const key = formatDate(c.date);
+                const { total, unsent } = countNotesForDate(data, key);
+                const classes = ['cal-cell'];
+                if (c.other) { classes.push('other-month'); }
+                if (key === todayKey) { classes.push('is-today'); }
+                if (key === selectedKey) { classes.push('is-selected'); }
+                const countClass = total === 0 ? 'none' : (unsent === 0 ? 'all-sent' : '');
+                return `<button class="${classes.join(' ')}" onclick="selectCalendarDate('${key}')">
+                    <span class="day-num">${c.day}</span>
+                    <span class="day-count ${countClass}">${total || ''}</span>
+                </button>`;
+            }).join('');
+
+            // 本月统计
+            let monthNotes = 0;
+            let monthDays = 0;
+            const prefix = `${year}-${String(month + 1).padStart(2, '0')}-`;
+            Object.keys(data).forEach(key => {
+                if (key.startsWith(prefix) && Array.isArray(data[key]) && data[key].length > 0) {
+                    monthDays += 1;
+                    monthNotes += data[key].length;
+                }
+            });
+            document.getElementById('statDays').textContent = monthDays;
+            document.getElementById('statNotes').textContent = monthNotes;
+            document.getElementById('statAvg').textContent = monthDays > 0 ? (monthNotes / monthDays).toFixed(1) : '0';
+        }
+
+        function selectCalendarDate(dateKey) {
+            const parts = dateKey.split('-');
+            currentDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+            if (isSelectionMode) { setSelectionMode(false); }
+            closeCalendar();
+            updateDateDisplay();
+        }
+
+        function calShiftMonth(delta) {
+            calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth() + delta, 1);
+            renderCalendar();
+        }
+
+        // ===== 事件绑定 =====
         document.getElementById('saveBtn').addEventListener('click', saveNote);
         document.getElementById('exportBtn').addEventListener('click', exportNotesBackup);
-        document.getElementById('importBtn').addEventListener('click', () => {
-            document.getElementById('importFile').click();
-        });
-        document.getElementById('importFile').addEventListener('change', (e) => {
-            importNotesBackup(e.target.files[0]);
-            e.target.value = '';
-        });
-        document.getElementById('noteInput').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                saveNote();
-            }
-        });
+        document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+        document.getElementById('importFile').addEventListener('change', (e) => { importNotesBackup(e.target.files[0]); e.target.value = ''; });
+        document.getElementById('noteInput').addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { saveNote(); } });
 
-        document.getElementById('selectBtn').addEventListener('click', () => {
-            setSelectionMode(!isSelectionMode);
-        });
-        
-        document.getElementById('prevDay').addEventListener('click', () => {
-            if (isSelectionMode) {
-                setSelectionMode(false);
-            }
-            currentDate.setDate(currentDate.getDate() - 1);
-            updateDateDisplay();
-        });
-        
-        document.getElementById('nextDay').addEventListener('click', () => {
-            if (isSelectionMode) {
-                setSelectionMode(false);
-            }
-            currentDate.setDate(currentDate.getDate() + 1);
-            updateDateDisplay();
-        });
-        
-        document.getElementById('todayBtn').addEventListener('click', () => {
-            if (isSelectionMode) {
-                setSelectionMode(false);
-            }
-            currentDate = new Date();
-            updateDateDisplay();
-        });
-        
-        document.getElementById('copyBtn').addEventListener('click', copyTodayNotes);
+        document.getElementById('selectBtn').addEventListener('click', () => setSelectionMode(!isSelectionMode));
+        document.getElementById('dateDisplay').addEventListener('click', openCalendar);
+        document.getElementById('calPrev').addEventListener('click', () => calShiftMonth(-1));
+        document.getElementById('calNext').addEventListener('click', () => calShiftMonth(1));
+        document.getElementById('calTodayBtn').addEventListener('click', () => selectCalendarDate(formatDate(new Date())));
+        document.getElementById('calOverlay').addEventListener('click', (e) => { if (e.target.id === 'calOverlay') { closeCalendar(); } });
+        document.getElementById('prevDay').addEventListener('click', () => { if (isSelectionMode) { setSelectionMode(false); } currentDate.setDate(currentDate.getDate() - 1); updateDateDisplay(); });
+        document.getElementById('nextDay').addEventListener('click', () => { if (isSelectionMode) { setSelectionMode(false); } currentDate.setDate(currentDate.getDate() + 1); updateDateDisplay(); });
+        document.getElementById('todayBtn').addEventListener('click', () => { if (isSelectionMode) { setSelectionMode(false); } currentDate = new Date(); updateDateDisplay(); });
+
+        document.getElementById('sendUnsentBtn').addEventListener('click', sendUnsent);
+        document.getElementById('moreBtn').addEventListener('click', (e) => { e.stopPropagation(); toggleBarMenu(); });
+        document.getElementById('resendAllBtn').addEventListener('click', resendAll);
+        document.getElementById('copyMenuBtn').addEventListener('click', copyTodayNotes);
+
+        document.getElementById('settingsBtn').addEventListener('click', openSettings);
+        document.getElementById('settingsCancel').addEventListener('click', closeSettings);
+        document.getElementById('settingsSave').addEventListener('click', saveSettings);
+        document.getElementById('syncNowBtn').addEventListener('click', () => { saveSettings(); syncNow(false); });
+        document.getElementById('disconnectBtn').addEventListener('click', disconnectSync);
+        document.getElementById('syncBtn').addEventListener('click', () => { if (!getSyncConfig().token) { openSettings(); } else { syncNow(false); } });
+        document.getElementById('settingsOverlay').addEventListener('click', (e) => { if (e.target.id === 'settingsOverlay') { closeSettings(); } });
+
+        const noteInputEl = document.getElementById('noteInput');
+        noteInputEl.addEventListener('input', () => autoGrowTextarea(noteInputEl));
+        autoGrowTextarea(noteInputEl);
+
         document.getElementById('selectAllBtn').addEventListener('click', toggleSelectAll);
         document.getElementById('copySelectedBtn').addEventListener('click', copySelectedNotes);
         document.getElementById('deleteSelectedBtn').addEventListener('click', deleteSelectedNotes);
         document.getElementById('mergeBtn').addEventListener('click', mergeSelectedNotes);
 
         document.addEventListener('keydown', (e) => {
-            if (!isSelectionMode) {
-                return;
-            }
-
-            if (e.key === 'Escape') {
-                setSelectionMode(false);
-            }
-
-            if (e.key.toLowerCase() === 'a' && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                selectedNoteIds = new Set(getCurrentNotes().map(note => note.id));
-                renderNotes();
-            }
+            if (e.key === 'Escape' && document.getElementById('calOverlay').classList.contains('show')) { closeCalendar(); return; }
+            if (!isSelectionMode) { return; }
+            if (e.key === 'Escape') { setSelectionMode(false); }
+            if (e.key.toLowerCase() === 'a' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); selectedNoteIds = new Set(getCurrentNotes().map(note => note.id)); renderNotes(); }
         });
-        
-        // 初始化
+
+        // 切回应用 / 重新聚焦时拉取远端（多设备场景）
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && getSyncConfig().token) { syncNow(true); } });
+        window.addEventListener('focus', () => { if (getSyncConfig().token) { syncNow(true); } });
+
+        // ===== 初始化 =====
+        migrateData();
+        setSyncStatus('ok');
         updateDateDisplay();
+        if (getSyncConfig().token) { syncNow(true); }
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(() => {
-                    // PWA support is optional when opened from file:// or unsupported contexts.
-                });
+                navigator.serviceWorker.register('./sw.js').catch(() => {});
             });
         }
     </script>
